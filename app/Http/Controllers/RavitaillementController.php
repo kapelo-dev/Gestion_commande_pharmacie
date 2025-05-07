@@ -82,6 +82,7 @@ class RavitaillementController extends Controller
             'produit_ravitaille' => 'required|string',
             'date_expiration' => 'required|date',
             'quantite_disponible' => 'required|integer|min:1',
+            'prix_achat' => 'required|numeric|min:0',
         ]);
     
         $pharmacieId = session('pharmacie_id');
@@ -128,22 +129,32 @@ class RavitaillementController extends Controller
     
             // Créer le document stock dans la sous-collection du produit
             $stockRef = $produitRef->collection('stock')->add([
-                'date_expiration' => $dateExpirationISO, // Enregistrer au format ISO 8601
+                'date_expiration' => $dateExpirationISO,
                 'lot_numero' => $request->lot_numero,
-                'quantite_disponible' => intval($request->quantite_disponible)
+                'quantite_disponible' => intval($request->quantite_disponible),
+                'prix_achat' => floatval($request->prix_achat)
             ]);
     
-            // Créer le document ravitaillement
+            // Créer le document ravitaillement avec la nouvelle structure
             $ravitaillementRef = $this->firestore
                 ->collection('pharmacies')
                 ->document($pharmacieId)
                 ->collection('ravitaillements')
                 ->add([
-                    'date_creation' => new \Google\Cloud\Core\Timestamp($dateRavitaillement),
+                    'date_ravitaillement' => new \Google\Cloud\Core\Timestamp($dateRavitaillement),
                     'fournisseur' => $request->fournisseur,
-                    'lot_numero' => $request->lot_numero,
-                    'produit_nom' => $produitNom, // Stocker le nom du produit directement
-                    'quantite_ravitailler' => intval($request->quantite_disponible)
+                    'produits' => [
+                        [
+                            'id_produit' => $request->produit_id,
+                            'nom_produit' => $produitNom,
+                            'lot_numero' => $request->lot_numero,
+                            'quantite' => intval($request->quantite_disponible),
+                            'prix_achat' => floatval($request->prix_achat),
+                            'prix_total' => floatval($request->prix_achat) * intval($request->quantite_disponible),
+                            'date_expiration' => $dateExpirationISO
+                        ]
+                    ],
+                    'montant_total' => floatval($request->prix_achat) * intval($request->quantite_disponible)
                 ]);
     
             // Mettre à jour la quantité totale du produit
@@ -410,6 +421,10 @@ class RavitaillementController extends Controller
                 throw new \Exception('Aucune donnée à importer');
             }
 
+            // Préparer les données pour le ravitaillement
+            $produits = [];
+            $montantTotal = 0;
+
             foreach ($importData as $row) {
                 // Mettre à jour le produit
                 $produitRef = $this->firestore
@@ -434,17 +449,34 @@ class RavitaillementController extends Controller
 
                 // Mettre à jour la quantité totale
                 $this->updateProduitQuantite($this->pharmacieId, $row['id_produit']);
+
+                // Calculer le prix total pour ce produit
+                $prixTotal = floatval($row['prix_achat']) * intval($row['quantite_disponible']);
+                $montantTotal += $prixTotal;
+
+                // Ajouter aux produits du ravitaillement
+                $produits[] = [
+                    'id_produit' => $row['id_produit'],
+                    'nom_produit' => $row['nom_produit'],
+                    'lot_numero' => $row['lot_numero'],
+                    'quantite' => intval($row['quantite_disponible']),
+                    'prix_achat' => floatval($row['prix_achat']),
+                    'prix_total' => $prixTotal,
+                    'date_expiration' => $row['date_expiration']
+                ];
             }
 
-            // Créer l'enregistrement du ravitaillement
+            // Créer l'enregistrement du ravitaillement avec la nouvelle structure
             $this->firestore
                 ->collection('pharmacies')
                 ->document($this->pharmacieId)
                 ->collection('ravitaillements')
                 ->add([
-                    'date_creation' => date('Y-m-d H:i:s'),
+                    'date_ravitaillement' => date('Y-m-d\TH:i:s\Z'),
                     'fichier_excel' => basename($filePath),
-                    'donnees_excel' => $importData
+                    'donnees_excel' => $importData,
+                    'produits' => $produits,
+                    'montant_total' => $montantTotal
                 ]);
 
             // Nettoyer la session

@@ -46,8 +46,8 @@
         </li>
         <li class="nav-item">
             <a href="{{ route('bilans.index') }}" class="nav-link {{ Request::routeIs('bilans.*') ? 'active' : '' }}">
-                <i class="nav-icon mdi mdi-chart-bar"></i>
-                <p>Bilans et Rapports</p>
+                <i class="mdi mdi-chart-bar" style="margin-right: 10px;"></i>
+                <span class="menu-title">Bilans et Rapports</span>
             </a>
         </li>
         
