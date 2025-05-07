@@ -213,4 +213,65 @@ public function update(Request $request, $produitId)
 
         return redirect()->route('produits.index')->with('success', 'Produit supprimé avec succès!');
     }
+
+    // Mettre à jour les quantités en stock
+    public function updateStock()
+    {
+        try {
+            $pharmacieId = session('pharmacie_id');
+
+            if (!$pharmacieId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID de la pharmacie introuvable.'
+                ]);
+            }
+
+            // Récupérer tous les produits
+            $produitsRef = $this->firestore
+                ->collection('pharmacies')
+                ->document($pharmacieId)
+                ->collection('produits');
+            
+            $produits = $produitsRef->documents();
+
+            // Pour chaque produit
+            foreach ($produits as $produit) {
+                $produitId = $produit->id();
+                
+                // Récupérer tous les stocks dans la sous-collection stock du produit
+                $stocksRef = $this->firestore
+                    ->collection('pharmacies')
+                    ->document($pharmacieId)
+                    ->collection('produits')
+                    ->document($produitId)
+                    ->collection('stock');
+                
+                $stocks = $stocksRef->documents();
+                
+                // Calculer la quantité totale
+                $quantiteTotale = 0;
+                foreach ($stocks as $stock) {
+                    $quantiteTotale += intval($stock->data()['quantite_disponible'] ?? 0);
+                }
+                
+                // Mettre à jour la quantité en stock du produit
+                $produitsRef->document($produitId)->update([
+                    ['path' => 'quantite_en_stock', 'value' => $quantiteTotale]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Les stocks ont été mis à jour avec succès.'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la mise à jour des stocks : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la mise à jour des stocks : ' . $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -48,10 +48,10 @@
                             <td class="text-center">
                                 <div class="btn-group" role="group">
                                     <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editPharmacienModal{{ $pharmacien['id'] }}">
-                                        <i class="fas fa-edit"></i> Éditer
+                                        <i class="fas fa-edit"></i>
                                     </button>
                                     <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ $pharmacien['id'] }}')" title="Supprimer">
-                                        <i class="fas fa-trash"></i> Supprimer
+                                        <i class="fas fa-trash"></i> 
                                     </button>
                                 </div>
                                 <form id="delete-form-{{ $pharmacien['id'] }}" action="{{ route('pharmaciens.destroy', $pharmacien['id']) }}" method="POST" style="display: none;">

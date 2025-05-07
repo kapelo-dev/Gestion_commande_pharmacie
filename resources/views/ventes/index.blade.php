@@ -164,7 +164,7 @@
                     <span>&times;</span>
                 </button>
             </div>
-            <form action="{{ route('ventes.store') }}" method="POST">
+            <form action="{{ route('ventes.store') }}" method="POST" id="formVente">
                 @csrf
                 <div class="modal-body">
                     <div id="produits-container">
@@ -327,7 +327,15 @@
         listContainer.empty().show();
 
         filteredProduits.forEach(produit => {
-            const item = $(`<div class="autocomplete-item" data-id="${produit.id}" data-prix="${produit.prix_unitaire}" data-sur-ordonnance="${produit.sur_ordonnance}">${produit.nom}</div>`);
+            const stockClass = produit.quantite_en_stock <= 0 ? 'text-danger' : '';
+            const stockInfo = produit.quantite_en_stock <= 0 ? ' (Rupture de stock)' : ` (Stock: ${produit.quantite_en_stock})`;
+            const item = $(`<div class="autocomplete-item ${stockClass}" 
+                data-id="${produit.id}" 
+                data-prix="${produit.prix_unitaire}" 
+                data-stock="${produit.quantite_en_stock}"
+                data-sur-ordonnance="${produit.sur_ordonnance}">
+                ${produit.nom}${stockInfo}
+            </div>`);
             listContainer.append(item);
         });
     });
@@ -339,18 +347,53 @@
         const idInput = container.find('.produit-id');
         const nomInput = container.find('.produit-nom');
         const prixInput = item.closest('.produit-item').find('.prix-unitaire');
+        const quantiteInput = item.closest('.produit-item').find('.quantite');
         const surOrdonnanceInput = item.closest('.produit-item').find('.sur-ordonnance');
 
-        input.val(item.text());
+        const stock = parseInt(item.data('stock'));
+        
+        // Mettre à jour les champs
+        input.val(item.text().replace(/ \(.*\)$/, '')); // Enlever l'info de stock du nom
         idInput.val(item.data('id'));
-        nomInput.val(item.text());
+        nomInput.val(item.text().replace(/ \(.*\)$/, '')); // Enlever l'info de stock du nom
         prixInput.val(item.data('prix'));
         surOrdonnanceInput.val(item.data('sur-ordonnance') ? 'Oui' : 'Non');
+
+        // Gérer le champ quantité
+        if (stock <= 0) {
+            quantiteInput.prop('disabled', true);
+            quantiteInput.val(0);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Rupture de stock',
+                text: 'Ce produit n\'est plus disponible en stock.',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            quantiteInput.prop('disabled', false);
+            quantiteInput.attr('max', stock);
+            quantiteInput.val(1);
+        }
+
         item.closest('.autocomplete-list').hide();
         calculerTotal();
     });
 
+    // Ajouter la vérification de la quantité maximale
     $(document).on('input', '.quantite', function() {
+        const input = $(this);
+        const max = parseInt(input.attr('max'));
+        const value = parseInt(input.val());
+
+        if (value > max) {
+            input.val(max);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuffisant',
+                text: `La quantité maximale disponible est de ${max} unités.`,
+                confirmButtonText: 'OK'
+            });
+        }
         calculerTotal();
     });
 
@@ -372,6 +415,66 @@
         setTimeout(function() {
             errorMessage.style.display = 'none';
         }, 3000);
+    });
+
+    // Gérer la soumission du formulaire
+    $('#formVente').on('submit', function(e) {
+        e.preventDefault();
+        
+        const form = $(this);
+        const url = form.attr('action');
+        const formData = form.serialize();
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Fermer le modal
+                    $('#addVenteModal').modal('hide');
+                    
+                    // Afficher le message de succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: 'Vente enregistrée avec succès',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recharger la page pour afficher la nouvelle vente
+                        window.location.reload();
+                    });
+
+                    // Vérifier s'il y a des alertes d'expiration
+                    if (response.data.alertes_expiration && response.data.alertes_expiration.length > 0) {
+                        let message = 'Les produits suivants sont proches de leur date d\'expiration :\n\n';
+                        response.data.alertes_expiration.forEach(alerte => {
+                            message += `- ${alerte.produit} (expire le ${alerte.date_expiration})\n`;
+                        });
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Attention',
+                            text: message,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+            },
+            error: function(xhr) {
+                let message = 'Une erreur est survenue';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: message
+                });
+            }
+        });
     });
 </script>
 

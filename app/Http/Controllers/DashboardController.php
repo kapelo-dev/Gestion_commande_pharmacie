@@ -79,7 +79,7 @@ class DashboardController extends Controller
             $commandesEnAttenteValidation = count($commandesEnCours);
             $commandesEnAttenteRecuperation = count($commandesValidees);
 
-            // Récupérer les produits
+       /*      // Récupérer les produits
             $produitsCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('produits');
             $produitsSnapshot = $produitsCollection->documents();
 
@@ -143,7 +143,7 @@ class DashboardController extends Controller
                         }
                     }
                 }
-            }
+            } */
             
 
             // Récupérer les ventes d'aujourd'hui
@@ -169,27 +169,27 @@ class DashboardController extends Controller
                 }
             }
 
-            // Compter les produits
+            /* // Compter les produits
             $countMedicamentsEnRupture = count($medicamentsEnRupture);
             $countProduitsSeuil = count($produitsSeuil);
             $countProduitsExpirés = count($produitsExpirés);
             $countProduitsExpirantDansTroisMois = count($produitsExpirantDansTroisMois);
            
-
+ */
             // Retourner la vue avec toutes les données nécessaires
             return view('dashboard', compact(
                 'pharmacyName',
-                'countMedicamentsEnRupture',
-                'countProduitsSeuil',
+                /* 'countMedicamentsEnRupture', */
+               /*  'countProduitsSeuil', */
                 'commandesEnAttenteValidation',
                 'commandesEnAttenteRecuperation',
-                'produitsSeuil',
-                'medicamentsEnRupture',
+                /* 'produitsSeuil',
+                'medicamentsEnRupture', */
                 'montantTotalAujourdHui',
-                'produitsExpirés',
+                /* 'produitsExpirés',
                 'produitsExpirantDansTroisMois',
                 'countProduitsExpirés',
-                'countProduitsExpirantDansTroisMois'
+                'countProduitsExpirantDansTroisMois' */
                
             ));
         } catch (\Exception $e) {

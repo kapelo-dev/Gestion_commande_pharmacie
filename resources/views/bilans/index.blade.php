@@ -26,8 +26,9 @@
                                 </div>
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
-                                <button type="button" class="btn btn-primary" onclick="genererBilan()">
-                                    <i class="mdi mdi-file-document"></i> Générer le bilan
+                                <button type="button" class="btn btn-primary" id="generateBilanBtn" onclick="genererBilan()">
+                                    <i class="mdi mdi-file-document" id="bilanBtnIcon"></i> 
+                                    <span id="bilanBtnText">Générer le bilan</span>
                                 </button>
                             </div>
                         </div>
@@ -121,7 +122,9 @@ function formatDate(dateStr) {
 function genererBilan() {
     const bilanResults = $('#bilanResults');
     const errorMessage = $('#errorMessage');
-    const submitBtn = $('button[type="button"]');
+    const submitBtn = $('#generateBilanBtn');
+    const btnIcon = $('#bilanBtnIcon');
+    const btnText = $('#bilanBtnText');
     
     // Masquer les résultats précédents et les erreurs
     bilanResults.addClass('d-none');
@@ -143,8 +146,9 @@ function genererBilan() {
     }
 
     // Afficher l'indicateur de chargement
-    const originalText = submitBtn.html();
-    submitBtn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Génération en cours...');
+    submitBtn.prop('disabled', true);
+    btnIcon.removeClass('mdi-file-document').addClass('mdi-loading mdi-spin');
+    btnText.text('Génération en cours...');
 
     // Appel AJAX
     $.ajax({
@@ -200,7 +204,9 @@ function genererBilan() {
         },
         complete: function() {
             // Restaurer le bouton à son état initial
-            submitBtn.prop('disabled', false).html(originalText);
+            submitBtn.prop('disabled', false);
+            btnIcon.removeClass('mdi-loading mdi-spin').addClass('mdi-file-document');
+            btnText.text('Générer le bilan');
         }
     });
 }

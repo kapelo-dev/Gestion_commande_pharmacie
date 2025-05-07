@@ -40,6 +40,7 @@ Route::prefix('produits')->name('produits.')->group(function () {
     Route::get('/{produit}/edit', [ProduitController::class, 'edit'])->name('edit');
     Route::post('/{id}/update', [ProduitController::class, 'update'])->name('update');
     Route::delete('/{id}', [ProduitController::class, 'destroy'])->name('destroy');
+    Route::post('/update-stock', [ProduitController::class, 'updateStock'])->name('updateStock');
     
     // Routes pour la gestion des produits dans le ravitaillement
     Route::post('/add', [RavitaillementController::class, 'addProduit'])->name('add');

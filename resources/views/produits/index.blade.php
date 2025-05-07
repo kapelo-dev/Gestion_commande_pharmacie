@@ -151,10 +151,10 @@
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editProduitModal{{ $produit['id'] }}">
-                                                <i class="fas fa-edit"></i> Éditer
+                                                <i class="fas fa-edit"></i> 
                                             </button>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ $produit['id'] }}')" title="Supprimer">
-                                                <i class="fas fa-trash"></i> Supprimer
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                         <form id="delete-form-{{ $produit['id'] }}" action="{{ route('produits.destroy', $produit['id']) }}" method="POST" style="display: none;">
@@ -213,7 +213,8 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="quantite_en_stock">Quantité en stock</label>
-                                <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" min="0" required>
+                                <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" min="0" value="0" readonly>
+                                <small class="text-muted">La quantité en stock est gérée automatiquement via les ravitaillements et les ventes</small>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -274,7 +275,8 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="quantite_en_stock">Quantité en stock</label>
-                                    <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" value="{{ $produit['quantite_en_stock'] }}" min="0" required>
+                                    <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" value="{{ $produit['quantite_en_stock'] }}" readonly>
+                                    <small class="text-muted">La quantité en stock est gérée automatiquement via les ravitaillements et les ventes</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
