@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Google\Cloud\Firestore\FirestoreClient;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -20,160 +21,183 @@ class DashboardController extends Controller
 
         // Récupérer l'ID de la pharmacie depuis la session
         $this->pharmacieId = session('pharmacie_id');
-
-        if (!$this->pharmacieId) {
-            // Rediriger ou gérer le cas où l'ID de la pharmacie n'est pas disponible
-            abort(403, 'ID de la pharmacie non disponible.');
-        }
     }
 
     public function index()
     {
+        // Log de l'accès au dashboard
+        file_put_contents(storage_path('logs/auth.log'), 
+            date('Y-m-d H:i:s') . " - Tentative d'accès au dashboard\n", 
+            FILE_APPEND);
+
+        // Log de l'état de la session
+        file_put_contents(storage_path('logs/auth.log'), 
+            date('Y-m-d H:i:s') . " - État de la session dashboard : " . json_encode([
+                'auth_check' => Auth::check(),
+                'pharmacie_id' => session('pharmacie_id'),
+                'session_data' => session()->all()
+            ]) . "\n", 
+            FILE_APPEND);
+
         if (!$this->pharmacieId) {
+            file_put_contents(storage_path('logs/auth.log'), 
+                date('Y-m-d H:i:s') . " - Accès au dashboard refusé : ID de pharmacie manquant\n", 
+                FILE_APPEND);
             return redirect()->route('login')->withErrors(['error' => 'Vous devez être connecté pour accéder à cette page.']);
         }
 
-        $pharmacySnapshot = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->snapshot();
-        $pharmacyName = $pharmacySnapshot->get('nom'); // Assurez-vous que 'nom' est le bon champ
+        try {
+            $pharmacySnapshot = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->snapshot();
+            $pharmacyName = $pharmacySnapshot->get('nom');
 
-        $commandesCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('commandes');
+            file_put_contents(storage_path('logs/auth.log'), 
+                date('Y-m-d H:i:s') . " - Accès au dashboard réussi pour la pharmacie : " . $pharmacyName . "\n", 
+                FILE_APPEND);
 
-        // Récupérer toutes les commandes sans filtrage
-        $commandesSnapshot = $commandesCollection->documents();
+            $commandesCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('commandes');
 
-        // Tableau pour stocker les commandes
-        $commandes = [];
-        foreach ($commandesSnapshot as $commande) {
-            $commandeData = $commande->data();
-            $commandeData['id'] = $commande->id(); // Utilisez la méthode id() pour obtenir l'ID
-            $commandes[] = $commandeData;
-        }
+            // Récupérer toutes les commandes sans filtrage
+            $commandesSnapshot = $commandesCollection->documents();
 
-        // Séparer les commandes par statut
-        $commandesValidees = array_filter($commandes, function($commande) {
-            return $commande['status_commande'] === 'validée';
-        });
-
-        $commandesEnCours = array_filter($commandes, function($commande) {
-            return $commande['status_commande'] === 'en_cours';
-        });
-
-        $commandesEnAttenteValidation = count($commandesEnCours);
-        $commandesEnAttenteRecuperation = count($commandesValidees);
-
-        // Récupérer les produits
-        $produitsCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('produits');
-        $produitsSnapshot = $produitsCollection->documents();
-
-        // Récupérer les produits et les filtrer
-        $produits = [];
-        foreach ($produitsSnapshot as $produit) {
-            $produitData = $produit->data();
-            if (isset($produitData['quantite_en_stock'])) {
-                $produits[] = $produitData; // Ajouter tous les produits à la liste
+            // Tableau pour stocker les commandes
+            $commandes = [];
+            foreach ($commandesSnapshot as $commande) {
+                $commandeData = $commande->data();
+                $commandeData['id'] = $commande->id(); // Utilisez la méthode id() pour obtenir l'ID
+                $commandes[] = $commandeData;
             }
-        }
 
-        // Filtrer les produits en rupture de stock et ceux proches de la rupture
-        $medicamentsEnRupture = array_filter($produits, function($produit) {
-            return $produit['quantite_en_stock'] === 0; // Produits en rupture de stock
-        });
+            // Séparer les commandes par statut
+            $commandesValidees = array_filter($commandes, function($commande) {
+                return $commande['status_commande'] === 'validée';
+            });
 
-        $produitsSeuil = array_filter($produits, function($produit) {
-            return $produit['quantite_en_stock'] > 0 && $produit['quantite_en_stock'] <= 20; // Produits proches de la rupture
-        });
+            $commandesEnCours = array_filter($commandes, function($commande) {
+                return $commande['status_commande'] === 'en_cours';
+            });
 
-        // Initialiser les tableaux pour les produits expirés et ceux qui expirent dans 3 mois
-        
-        // Initialiser les tableaux pour les produits expirés et ceux qui expirent dans 3 mois
-        $produitsExpirés = [];
-        $produitsExpirantDansTroisMois = [];
+            $commandesEnAttenteValidation = count($commandesEnCours);
+            $commandesEnAttenteRecuperation = count($commandesValidees);
 
-        foreach ($produitsSnapshot as $produit) {
-            $stockCollection = $produit->reference()->collection('stock');
-            $stockSnapshot = $stockCollection->documents();
+            // Récupérer les produits
+            $produitsCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('produits');
+            $produitsSnapshot = $produitsCollection->documents();
 
-            foreach ($stockSnapshot as $lot) {
-                $lotData = $lot->data();
-                if (isset($lotData['date_expiration'], $lotData['quantite_disponible'], $lotData['lot_numero'])) {
-                    // Analyser la date d'expiration avec le format ISO 8601
-                    $expirationDate = \DateTime::createFromFormat(\DateTime::ISO8601, $lotData['date_expiration']);
+            // Récupérer les produits et les filtrer
+            $produits = [];
+            foreach ($produitsSnapshot as $produit) {
+                $produitData = $produit->data();
+                if (isset($produitData['quantite_en_stock'])) {
+                    $produits[] = $produitData; // Ajouter tous les produits à la liste
+                }
+            }
 
-                    // Vérifiez si l'analyse a réussi
-                    if ($expirationDate === false) {
-                        continue; // Passer à l'itération suivante si l'analyse échoue
-                    }
+            // Filtrer les produits en rupture de stock et ceux proches de la rupture
+            $medicamentsEnRupture = array_filter($produits, function($produit) {
+                return $produit['quantite_en_stock'] === 0; // Produits en rupture de stock
+            });
 
-                    // Vérifiez si la date d'expiration est déjà passée
-                    if ($expirationDate < new \DateTime()) {
-                        $produitsExpirés[] = [
-                            'nom' => $produit->get('nom'),
-                            'date_expiration' => $lotData['date_expiration'],
-                            'quantite_disponible' => $lotData['quantite_disponible'],
-                            'lot_numero' => $lotData['lot_numero'],
-                        ];
-                    }
+            $produitsSeuil = array_filter($produits, function($produit) {
+                return $produit['quantite_en_stock'] > 0 && $produit['quantite_en_stock'] <= 20; // Produits proches de la rupture
+            });
 
-                    // Vérifiez si la date d'expiration est dans les trois mois
-                    if ($expirationDate > new \DateTime() && $expirationDate <= (new \DateTime())->modify('+3 months')) {
-                        $produitsExpirantDansTroisMois[] = [
-                            'nom' => $produit->get('nom'),
-                            'date_expiration' => $lotData['date_expiration'],
-                            'quantite_disponible' => $lotData['quantite_disponible'],
-                            'lot_numero' => $lotData['lot_numero'],
-                        ];
+            // Initialiser les tableaux pour les produits expirés et ceux qui expirent dans 3 mois
+            
+            // Initialiser les tableaux pour les produits expirés et ceux qui expirent dans 3 mois
+            $produitsExpirés = [];
+            $produitsExpirantDansTroisMois = [];
+
+            foreach ($produitsSnapshot as $produit) {
+                $stockCollection = $produit->reference()->collection('stock');
+                $stockSnapshot = $stockCollection->documents();
+
+                foreach ($stockSnapshot as $lot) {
+                    $lotData = $lot->data();
+                    if (isset($lotData['date_expiration'], $lotData['quantite_disponible'], $lotData['lot_numero'])) {
+                        // Analyser la date d'expiration avec le format ISO 8601
+                        $expirationDate = \DateTime::createFromFormat(\DateTime::ISO8601, $lotData['date_expiration']);
+
+                        // Vérifiez si l'analyse a réussi
+                        if ($expirationDate === false) {
+                            continue; // Passer à l'itération suivante si l'analyse échoue
+                        }
+
+                        // Vérifiez si la date d'expiration est déjà passée
+                        if ($expirationDate < new \DateTime()) {
+                            $produitsExpirés[] = [
+                                'nom' => $produit->get('nom'),
+                                'date_expiration' => $lotData['date_expiration'],
+                                'quantite_disponible' => $lotData['quantite_disponible'],
+                                'lot_numero' => $lotData['lot_numero'],
+                            ];
+                        }
+
+                        // Vérifiez si la date d'expiration est dans les trois mois
+                        if ($expirationDate > new \DateTime() && $expirationDate <= (new \DateTime())->modify('+3 months')) {
+                            $produitsExpirantDansTroisMois[] = [
+                                'nom' => $produit->get('nom'),
+                                'date_expiration' => $lotData['date_expiration'],
+                                'quantite_disponible' => $lotData['quantite_disponible'],
+                                'lot_numero' => $lotData['lot_numero'],
+                            ];
+                        }
                     }
                 }
             }
-        }
-        
+            
 
-        // Récupérer les ventes d'aujourd'hui
-        $ventesCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('ventes');
-        $ventesSnapshot = $ventesCollection->documents();
+            // Récupérer les ventes d'aujourd'hui
+            $ventesCollection = $this->firestore->collection('pharmacies')->document($this->pharmacieId)->collection('ventes');
+            $ventesSnapshot = $ventesCollection->documents();
 
-        $montantTotalAujourdHui = 0;
-        $aujourdhui = new \DateTime(); // Date actuelle
-        $aujourdhuiFormat = $aujourdhui->format('Y-m-d'); // Format pour comparer avec 'date_vente'
+            $montantTotalAujourdHui = 0;
+            $aujourdhui = new \DateTime(); // Date actuelle
+            $aujourdhuiFormat = $aujourdhui->format('Y-m-d'); // Format pour comparer avec 'date_vente'
 
-        foreach ($ventesSnapshot as $vente) {
-            $venteData = $vente->data();
-            $dateVente = \DateTime::createFromFormat(\DateTime::ISO8601, $venteData['date_vente']);
+            foreach ($ventesSnapshot as $vente) {
+                $venteData = $vente->data();
+                $dateVente = \DateTime::createFromFormat(\DateTime::ISO8601, $venteData['date_vente']);
 
-            // Vérifiez si l'analyse a réussi
-            if ($dateVente === false) {
-                continue; // Passer à l'itération suivante si l'analyse échoue
+                // Vérifiez si l'analyse a réussi
+                if ($dateVente === false) {
+                    continue; // Passer à l'itération suivante si l'analyse échoue
+                }
+
+                // Comparer la date de vente avec aujourd'hui
+                if ($dateVente->format('Y-m-d') === $aujourdhuiFormat) {
+                    $montantTotalAujourdHui += $venteData['montant_total'];
+                }
             }
 
-            // Comparer la date de vente avec aujourd'hui
-            if ($dateVente->format('Y-m-d') === $aujourdhuiFormat) {
-                $montantTotalAujourdHui += $venteData['montant_total'];
-            }
-        }
-
-        // Compter les produits
-        $countMedicamentsEnRupture = count($medicamentsEnRupture);
-        $countProduitsSeuil = count($produitsSeuil);
-        $countProduitsExpirés = count($produitsExpirés);
-        $countProduitsExpirantDansTroisMois = count($produitsExpirantDansTroisMois);
-       
-
-        // Retourner la vue avec toutes les données nécessaires
-        return view('dashboard', compact(
-            'pharmacyName',
-            'countMedicamentsEnRupture',
-            'countProduitsSeuil',
-            'commandesEnAttenteValidation',
-            'commandesEnAttenteRecuperation',
-            'produitsSeuil',
-            'medicamentsEnRupture',
-            'montantTotalAujourdHui',
-            'produitsExpirés',
-            'produitsExpirantDansTroisMois',
-            'countProduitsExpirés',
-            'countProduitsExpirantDansTroisMois'
+            // Compter les produits
+            $countMedicamentsEnRupture = count($medicamentsEnRupture);
+            $countProduitsSeuil = count($produitsSeuil);
+            $countProduitsExpirés = count($produitsExpirés);
+            $countProduitsExpirantDansTroisMois = count($produitsExpirantDansTroisMois);
            
-        ));
+
+            // Retourner la vue avec toutes les données nécessaires
+            return view('dashboard', compact(
+                'pharmacyName',
+                'countMedicamentsEnRupture',
+                'countProduitsSeuil',
+                'commandesEnAttenteValidation',
+                'commandesEnAttenteRecuperation',
+                'produitsSeuil',
+                'medicamentsEnRupture',
+                'montantTotalAujourdHui',
+                'produitsExpirés',
+                'produitsExpirantDansTroisMois',
+                'countProduitsExpirés',
+                'countProduitsExpirantDansTroisMois'
+               
+            ));
+        } catch (\Exception $e) {
+            file_put_contents(storage_path('logs/auth.log'), 
+                date('Y-m-d H:i:s') . " - Erreur lors de la récupération des données du dashboard : " . $e->getMessage() . "\n", 
+                FILE_APPEND);
+            return redirect()->route('login')->withErrors(['error' => 'Erreur lors de la récupération des données du dashboard.']);
+        }
     }
 
     

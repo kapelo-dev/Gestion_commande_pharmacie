@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Google\Cloud\Firestore\FirestoreClient;
+use Illuminate\Support\Facades\Log;
 
 class FirebaseService
 {
@@ -24,17 +25,39 @@ class FirebaseService
 
     public function getDocuments($collection)
     {
-        return $this->firestore->collection($collection)->documents();
+        try {
+            return $this->firestore->collection($collection)->documents();
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des documents : ' . $e->getMessage());
+            throw $e;
+        }
     }
 
-    public function getSubCollection($collection, $documentId, $subCollection)
+    public function getSubCollection($collection, $document, $subCollection)
     {
-        return $this->firestore->collection($collection)->document($documentId)->collection($subCollection)->documents();
+        try {
+            return $this->firestore
+                ->collection($collection)
+                ->document($document)
+                ->collection($subCollection)
+                ->documents();
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération de la sous-collection : ' . $e->getMessage());
+            throw $e;
+        }
     }
 
-    public function getDocument(string $collection, string $documentId)
+    public function getDocument($collection, $document)
     {
-        return $this->firestore->collection($collection)->document($documentId)->snapshot();
+        try {
+            return $this->firestore
+                ->collection($collection)
+                ->document($document)
+                ->snapshot();
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération du document : ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function getDocumentByField($collection, $documentId, $subCollection, $field, $value)

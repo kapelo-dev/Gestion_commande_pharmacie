@@ -18,9 +18,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'id',
         'name',
         'email',
         'password',
+        'telephone',
+        'role',
     ];
 
     /**
@@ -45,4 +48,11 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Désactiver les timestamps car nous n'utilisons pas de base de données
+    public $timestamps = false;
+
+    // Indiquer que nous n'utilisons pas de base de données
+    protected $keyType = 'string';
+    public $incrementing = false;
 }

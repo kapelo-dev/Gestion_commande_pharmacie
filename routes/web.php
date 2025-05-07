@@ -9,47 +9,68 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PharmacienController;
 use App\Http\Controllers\RavitaillementController;
 
-
-
+// Routes publiques
 Route::get('/', function () {
     return view('welcome');
 });
 
+// Routes d'authentification
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login'])->name('login');
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// Dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // Ventes
-Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
-Route::post('/ventes/store', [VenteController::class, 'store'])->name('ventes.store');
-Route::get('/ventes/get-produits', [VenteController::class, 'getProduits'])->name('ventes.getProduits');
+Route::prefix('ventes')->name('ventes.')->group(function () {
+    Route::get('/', [VenteController::class, 'index'])->name('index');
+    Route::post('/store', [VenteController::class, 'store'])->name('store');
+    Route::get('/get-produits', [VenteController::class, 'getProduits'])->name('getProduits');
+});
 
 // Produits
-Route::get('/produits', [ProduitController::class, 'index'])->name('produits.index');
-Route::get('/produits/create', [ProduitController::class, 'create'])->name('produits.create');
-Route::post('/produits', [ProduitController::class, 'store'])->name('produits.store');
-Route::get('/produits/{produit}', [ProduitController::class, 'show'])->name('produits.show');
-Route::get('/produits/{produit}/edit', [ProduitController::class, 'edit'])->name('produits.edit');
-Route::post('/produits/{id}/update', [ProduitController::class, 'update'])->name('produits.update');
-Route::post('/produits/{id}/delete', [ProduitController::class, 'destroy'])->name('produits.destroy');
-
-// Routes pour les commandes
-Route::get('/commandes', [CommandeController::class, 'showCommandes'])->name('commandes.index');
-Route::post('/commandes/{commandeId}/status/{status}', [CommandeController::class, 'updateStatus'])->name('commandes.updateStatus');
-
-// Routes pour les pharmaciensuse App\Http\Controllers\PharmacienController;
-
-
-    Route::get('/pharmaciens', [PharmacienController::class, 'index'])->name('pharmaciens.index');
-    Route::get('/pharmaciens/create', [PharmacienController::class, 'create'])->name('pharmaciens.create');
-    Route::post('/pharmaciens', [PharmacienController::class, 'store'])->name('pharmaciens.store');
-    Route::get('/pharmaciens/{pharmacienId}/edit', [PharmacienController::class, 'edit'])->name('pharmaciens.edit');
-    Route::put('/pharmaciens/{pharmacienId}', [PharmacienController::class, 'update'])->name('pharmaciens.update');
-    Route::delete('/pharmaciens/{pharmacienId}', [PharmacienController::class, 'destroy'])->name('pharmaciens.destroy');
-
-    Route::get('/ravitaillements', [RavitaillementController::class, 'index'])->name('ravitaillements.index');
-    Route::post('/ravitaillements/store', [RavitaillementController::class, 'store'])->name('ravitaillements.store');
-    Route::post('/ravitaillements/{id}/delete', [RavitaillementController::class, 'destroy'])->name('ravitaillements.destroy');
+Route::prefix('produits')->name('produits.')->group(function () {
+    Route::get('/', [ProduitController::class, 'index'])->name('index');
+    Route::get('/create', [ProduitController::class, 'create'])->name('create');
+    Route::post('/', [ProduitController::class, 'store'])->name('store');
+    Route::get('/{produit}', [ProduitController::class, 'show'])->name('show');
+    Route::get('/{produit}/edit', [ProduitController::class, 'edit'])->name('edit');
+    Route::post('/{id}/update', [ProduitController::class, 'update'])->name('update');
+    Route::post('/{id}/delete', [ProduitController::class, 'destroy'])->name('destroy');
     
+    // Routes pour la gestion des produits dans le ravitaillement
+    Route::post('/add', [RavitaillementController::class, 'addProduit'])->name('add');
+    Route::get('/list', [RavitaillementController::class, 'getProduits'])->name('list');
+});
+
+// Commandes
+Route::prefix('commandes')->name('commandes.')->group(function () {
+    Route::get('/', [CommandeController::class, 'showCommandes'])->name('index');
+    Route::post('/{commandeId}/status/{status}', [CommandeController::class, 'updateStatus'])->name('updateStatus');
+});
+
+// Pharmaciens
+Route::prefix('pharmaciens')->name('pharmaciens.')->group(function () {
+    Route::get('/', [PharmacienController::class, 'index'])->name('index');
+    Route::get('/create', [PharmacienController::class, 'create'])->name('create');
+    Route::post('/', [PharmacienController::class, 'store'])->name('store');
+    Route::get('/{pharmacienId}/edit', [PharmacienController::class, 'edit'])->name('edit');
+    Route::put('/{pharmacienId}', [PharmacienController::class, 'update'])->name('update');
+    Route::delete('/{pharmacienId}', [PharmacienController::class, 'destroy'])->name('destroy');
+});
+
+// Ravitaillements
+Route::prefix('ravitaillements')->name('ravitaillements.')->group(function () {
+    // Routes d'importation
+    Route::get('/template/download', [RavitaillementController::class, 'downloadTemplate'])->name('template.download');
+    Route::post('/import/preview', [RavitaillementController::class, 'previewImport'])->name('import.preview');
+    Route::post('/import/process', [RavitaillementController::class, 'processImport'])->name('import.process');
+    Route::get('/import', [RavitaillementController::class, 'showImport'])->name('import');
+    
+    // Routes principales
+    Route::get('/', [RavitaillementController::class, 'index'])->name('index');
+    Route::post('/store', [RavitaillementController::class, 'store'])->name('store');
+    Route::get('/{id}/preview', [RavitaillementController::class, 'preview'])->name('preview');
+    Route::delete('/{id}', [RavitaillementController::class, 'destroy'])->name('destroy');
+});
