@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PharmacienController;
 use App\Http\Controllers\RavitaillementController;
 use App\Http\Controllers\BilanController;
+use App\Http\Controllers\DestockageController;
 
 // Routes publiques
 Route::get('/', function () {
@@ -80,4 +81,10 @@ Route::prefix('ravitaillements')->name('ravitaillements.')->group(function () {
 Route::prefix('bilans')->name('bilans.')->group(function () {
     Route::get('/', [BilanController::class, 'index'])->name('index');
     Route::post('/generer', [BilanController::class, 'genererBilan'])->name('generer');
+});
+
+// Déstockage
+Route::prefix('destockage')->name('destockage.')->group(function () {
+    Route::get('/', [DestockageController::class, 'index'])->name('index');
+    Route::post('/destocker', [DestockageController::class, 'destocker'])->name('destocker');
 });

@@ -39,9 +39,9 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#"> 
-                <i class="mdi mdi-playlist-minus" style="margin-right: 10px;"></i>
-                <span class="menu-title">Destockage</span>
+            <a href="{{ route('destockage.index') }}" class="nav-link {{ Request::routeIs('destockage.*') ? 'active' : '' }}">
+                <i class="mdi mdi-delete-variant" style="margin-right: 10px;"></i>
+                <span class="menu-title">Déstockage</span>
             </a>
         </li>
         <li class="nav-item">
