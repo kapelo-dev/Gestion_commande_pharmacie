@@ -51,15 +51,30 @@ class RavitaillementController extends Controller
                 ->collection('pharmacies')
                 ->document($pharmacieId)
                 ->collection('ravitaillements')
-                ->orderBy('date_creation', 'DESC')
+                ->orderBy('date_ravitaillement', 'DESC')
                 ->documents();
     
             foreach ($ravitaillementsRef as $doc) {
                 $data = $doc->data();
+                
+                // Récupérer la date du ravitaillement
+                $date = null;
+                if (isset($data['date_ravitaillement'])) {
+                    if ($data['date_ravitaillement'] instanceof \Google\Cloud\Core\Timestamp) {
+                        $date = $data['date_ravitaillement']->get()->format('d/m/Y');
+                    } else {
+                        $date = date('d/m/Y', strtotime($data['date_ravitaillement']));
+                    }
+                } else {
+                    $date = date('d/m/Y');
+                }
+
                 $ravitaillements[] = [
                     'id' => $doc->id(),
-                    'date' => isset($data['date_creation']) ? date('d/m/Y', strtotime($data['date_creation'])) : date('d/m/Y'),
-                    'fichier' => isset($data['fichier_excel']) ? $data['fichier_excel'] : null
+                    'date' => $date,
+                    'fichier' => isset($data['fichier_excel']) ? $data['fichier_excel'] : null,
+                    'fournisseur' => isset($data['fournisseur']) ? $data['fournisseur'] : 'N/A',
+                    'montant_total' => isset($data['montant_total']) ? number_format($data['montant_total'], 2) . ' F' : '0.00 F'
                 ];
             }
     

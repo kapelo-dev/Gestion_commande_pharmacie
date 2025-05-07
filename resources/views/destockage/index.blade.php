@@ -83,22 +83,6 @@
 
 <div class="content-wrapper">
     <div class="row">
-        <div class="col-12">
-            @if(session('success'))
-                <div class="alert alert-success" id="successMessage">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger" id="errorMessage">
-                    {{ session('error') }}
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <div class="row">
         <!-- Produits Expirés -->
         <div class="col-md-12 grid-margin stretch-card">
             <div class="card border border-danger">
@@ -212,7 +196,7 @@
                                     <textarea name="commentaire" id="commentaire" class="form-control" rows="3"></textarea>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary" onclick="return confirm('Êtes-vous sûr de vouloir déstocker ces produits ?')">
+                                <button type="submit" class="btn btn-primary" id="btnDestocker">
                                     <i class="fas fa-trash-alt"></i> Procéder au Déstockage
                                 </button>
                             </div>
@@ -240,11 +224,58 @@
         });
     }
 
-    // Faire disparaître les messages après 5 secondes
-    setTimeout(function() {
-        $('#successMessage').fadeOut('slow');
-        $('#errorMessage').fadeOut('slow');
-    }, 5000);
+    // Remplacer le setTimeout par SweetAlert2 pour les messages de succès/erreur
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès!',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur!',
+            text: "{{ session('error') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+
+    // Ajouter la confirmation avec SweetAlert2 pour le déstockage
+    document.getElementById('formDestockage').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Vérifier si au moins une case est cochée
+        const checkedBoxes = document.querySelectorAll('input[name="lots[]"]:checked');
+        if (checkedBoxes.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Attention!',
+                text: 'Veuillez sélectionner au moins un produit à déstocker.',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Confirmation de déstockage',
+            text: 'Êtes-vous sûr de vouloir déstocker ces produits ?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, déstocker',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.submit();
+            }
+        });
+    });
 
     // Ajouter des écouteurs d'événements pour les checkboxes
     document.addEventListener('DOMContentLoaded', function() {
