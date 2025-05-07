@@ -8,6 +8,7 @@ use App\Http\Controllers\CommandeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PharmacienController;
 use App\Http\Controllers\RavitaillementController;
+use App\Http\Controllers\BilanController;
 
 // Routes publiques
 Route::get('/', function () {
@@ -37,7 +38,7 @@ Route::prefix('produits')->name('produits.')->group(function () {
     Route::get('/{produit}', [ProduitController::class, 'show'])->name('show');
     Route::get('/{produit}/edit', [ProduitController::class, 'edit'])->name('edit');
     Route::post('/{id}/update', [ProduitController::class, 'update'])->name('update');
-    Route::post('/{id}/delete', [ProduitController::class, 'destroy'])->name('destroy');
+    Route::delete('/{id}', [ProduitController::class, 'destroy'])->name('destroy');
     
     // Routes pour la gestion des produits dans le ravitaillement
     Route::post('/add', [RavitaillementController::class, 'addProduit'])->name('add');
@@ -73,4 +74,10 @@ Route::prefix('ravitaillements')->name('ravitaillements.')->group(function () {
     Route::post('/store', [RavitaillementController::class, 'store'])->name('store');
     Route::get('/{id}/preview', [RavitaillementController::class, 'preview'])->name('preview');
     Route::delete('/{id}', [RavitaillementController::class, 'destroy'])->name('destroy');
+});
+
+// Bilans
+Route::prefix('bilans')->name('bilans.')->group(function () {
+    Route::get('/', [BilanController::class, 'index'])->name('index');
+    Route::post('/generer', [BilanController::class, 'genererBilan'])->name('generer');
 });

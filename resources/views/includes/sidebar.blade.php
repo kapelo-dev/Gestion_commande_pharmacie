@@ -44,6 +44,12 @@
                 <span class="menu-title">Destockage</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('bilans.index') }}" class="nav-link {{ Request::routeIs('bilans.*') ? 'active' : '' }}">
+                <i class="nav-icon mdi mdi-chart-bar"></i>
+                <p>Bilans et Rapports</p>
+            </a>
+        </li>
         
         
 

@@ -40,6 +40,38 @@
         margin-top: 1rem;
         max-height: 300px;
         overflow-y: auto;
+        font-size: 0.875rem;
+    }
+
+    .preview-table th, 
+    .preview-table td {
+        padding: 0.5rem !important;
+        white-space: nowrap;
+    }
+
+    .preview-table .prix {
+        min-width: 100px;
+    }
+
+    .preview-table .date {
+        min-width: 100px;
+    }
+
+    .preview-table .quantite {
+        min-width: 80px;
+    }
+
+    .preview-table .variation {
+        min-width: 90px;
+    }
+
+    .preview-table .status {
+        min-width: 90px;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
     }
 
     .table {
@@ -129,7 +161,7 @@
 
     <!-- Liste des ravitaillements -->
     <div class="table-responsive mb-5">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-striped table-hover align-middle" id="ravitaillements-table">
             <thead class="table-light">
                 <tr>
                     <th class="text-center" style="width: 5%">#</th>
@@ -140,7 +172,7 @@
             </thead>
             <tbody>
                 @foreach ($ravitaillements as $index => $ravitaillement)
-                    <tr>
+                    <tr data-ravitaillement-id="{{ $ravitaillement['id'] }}">
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $ravitaillement['date'] }}</td>
                         <td>{{ $ravitaillement['fichier'] }}</td>
@@ -169,6 +201,11 @@
                         </td>
                     </tr>
                 @endforeach
+                @if(count($ravitaillements) === 0)
+                    <tr>
+                        <td colspan="4" class="text-center">Aucun ravitaillement trouvé</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
     </div>
@@ -207,14 +244,15 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID Produit</th>
+                                    <th>ID</th>
                                     <th>Produit</th>
-                                    <th>N° Lot</th>
-                                    <th>Date d'expiration</th>
-                                    <th>Quantité</th>
-                                    <th>Prix d'achat</th>
-                                    <th>Prix unitaire</th>
-                                    <th>Variation prix</th>
+                                    <th>Lot</th>
+                                    <th class="date">Date exp.</th>
+                                    <th class="quantite">Qté</th>
+                                    <th class="prix">Prix achat</th>
+                                    <th class="prix">Prix unit.</th>
+                                    <th class="variation">Variation</th>
+                                    <th class="status">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="previewTableBody">
@@ -305,54 +343,95 @@
 </div>
 
 <script>
+    // Fonction pour prévisualiser un ravitaillement
+    window.previewRavitaillement = function(ravitaillementId) {
+        // Afficher un indicateur de chargement
+        $('#ravitaillementDetails').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>');
+        
+        // Afficher la modal
+        var previewModal = new bootstrap.Modal(document.getElementById('previewRavitaillementModal'));
+        previewModal.show();
+
+        // Charger les détails
+        $.ajax({
+            url: '/ravitaillements/' + ravitaillementId + '/preview',
+            type: 'GET',
+            success: function(response) {
+                $('#ravitaillementDetails').html(response);
+            },
+            error: function(xhr) {
+                $('#ravitaillementDetails').html('<div class="alert alert-danger">Erreur lors du chargement des détails.</div>');
+                console.error('Erreur:', xhr);
+            }
+        });
+    }
+
+    // Fonction pour confirmer et supprimer un ravitaillement
+    window.confirmDelete = function(ravitaillementId) {
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: "Cette action est irréversible !",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Récupérer le formulaire
+                const form = $(`#delete-form-${ravitaillementId}`);
+                
+                // Envoyer la requête AJAX
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        // Cacher la ligne du tableau avec une animation
+                        $(`tr[data-ravitaillement-id="${ravitaillementId}"]`).fadeOut(400, function() {
+                            $(this).remove();
+                            
+                            // Vérifier s'il reste des lignes dans le tableau
+                            if ($('#ravitaillements-table tbody tr').length === 0) {
+                                $('#ravitaillements-table tbody').append(
+                                    '<tr><td colspan="4" class="text-center">Aucun ravitaillement trouvé</td></tr>'
+                                );
+                            } else {
+                                // Mettre à jour les index
+                                $('#ravitaillements-table tbody tr').each(function(index) {
+                                    if (!$(this).find('td[colspan]').length) { // Ignorer la ligne "Aucun ravitaillement trouvé"
+                                        $(this).find('td:first').text(index + 1);
+                                    }
+                                });
+                            }
+                        });
+                        
+                        // Afficher le message de succès
+                        Swal.fire(
+                            'Supprimé !',
+                            'Le ravitaillement a été supprimé avec succès.',
+                            'success'
+                        );
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Erreur !',
+                            'Une erreur est survenue lors de la suppression.',
+                            'error'
+                        );
+                    }
+                });
+            }
+        });
+    }
+
     $(document).ready(function() {
         // Fonction pour ouvrir la modal d'importation
         window.openImportModal = function() {
             var myModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
             myModal.show();
         };
-
-        // Fonction pour prévisualiser un ravitaillement
-        function previewRavitaillement(ravitaillementId) {
-            // Afficher un indicateur de chargement
-            $('#ravitaillementDetails').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>');
-            
-            // Afficher la modal
-            var previewModal = new bootstrap.Modal(document.getElementById('previewRavitaillementModal'));
-            previewModal.show();
-
-            // Charger les détails
-            $.ajax({
-                url: '/ravitaillements/' + ravitaillementId + '/preview',
-                type: 'GET',
-                success: function(response) {
-                    $('#ravitaillementDetails').html(response);
-                },
-                error: function(xhr) {
-                    $('#ravitaillementDetails').html('<div class="alert alert-danger">Erreur lors du chargement des détails.</div>');
-                    console.error('Erreur:', xhr);
-                }
-            });
-        }
-
-        // Fonction pour confirmer et supprimer un ravitaillement
-        function confirmDelete(ravitaillementId) {
-            Swal.fire({
-                title: 'Êtes-vous sûr ?',
-                text: "Cette action est irréversible !",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Oui, supprimer',
-                cancelButtonText: 'Annuler'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Soumettre le formulaire de suppression
-                    document.getElementById('delete-form-' + ravitaillementId).submit();
-                }
-            });
-        }
 
         // Gestion de la soumission du formulaire d'importation
         $('#submitImport').click(function() {
@@ -371,8 +450,8 @@
                 success: function(response) {
                     if (response.error) {
                         Swal.fire('Erreur', response.error, 'error');
-                        return;
-                    }
+                return;
+            }
 
                     // Vider le tableau existant
                     $('#previewTableBody').empty();
@@ -381,14 +460,16 @@
                     if (response.preview && response.preview.length > 0) {
                         response.preview.forEach(function(row) {
                             var tr = $('<tr>');
+                            tr.addClass(row.produit_trouve ? 'table-success' : 'table-warning');
                             tr.append($('<td>').text(row.id_produit));
                             tr.append($('<td>').text(row.nom_produit));
                             tr.append($('<td>').text(row.lot_numero));
-                            tr.append($('<td>').text(row.date_expiration));
-                            tr.append($('<td>').text(row.quantite_disponible));
-                            tr.append($('<td>').text(row.prix_achat + ' FCFA'));
-                            tr.append($('<td>').text(row.prix_unitaire + ' FCFA'));
-                            tr.append($('<td>').text(row.variation_prix + '%'));
+                            tr.append($('<td class="date">').text(row.date_expiration));
+                            tr.append($('<td class="text-end quantite">').text(row.quantite_disponible));
+                            tr.append($('<td class="text-end prix">').text(new Intl.NumberFormat('fr-FR').format(row.prix_achat) + ' F'));
+                            tr.append($('<td class="text-end prix">').text(new Intl.NumberFormat('fr-FR').format(row.prix_unitaire) + ' F'));
+                            tr.append($('<td class="text-end variation">').text(row.variation_prix + '%'));
+                            tr.append($('<td class="text-center status">').html(`<span class="badge ${row.produit_trouve ? 'bg-success' : 'bg-warning text-dark'}">${row.produit_trouve ? 'Trouvé' : 'Non trouvé'}</span>`));
                             $('#previewTableBody').append(tr);
                         });
                         

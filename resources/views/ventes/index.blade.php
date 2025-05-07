@@ -375,4 +375,19 @@
     });
 </script>
 
+@if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès',
+                text: @json(session('success')),
+                confirmButtonText: 'OK',
+                timer: 3000,
+                timerProgressBar: true
+            });
+        });
+    </script>
+@endif
+
 @endsection

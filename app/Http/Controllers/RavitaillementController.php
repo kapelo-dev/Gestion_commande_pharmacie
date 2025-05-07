@@ -139,7 +139,7 @@ class RavitaillementController extends Controller
                 ->document($pharmacieId)
                 ->collection('ravitaillements')
                 ->add([
-                    'date_ravitaillement' => new \Google\Cloud\Core\Timestamp($dateRavitaillement),
+                    'date_creation' => new \Google\Cloud\Core\Timestamp($dateRavitaillement),
                     'fournisseur' => $request->fournisseur,
                     'lot_numero' => $request->lot_numero,
                     'produit_nom' => $produitNom, // Stocker le nom du produit directement
@@ -333,6 +333,19 @@ class RavitaillementController extends Controller
                 $row = array_combine($headers, $rows[$i]);
                 
                 try {
+                    // Préparer les données de base
+                    $previewRow = [
+                        'id_produit' => $row['id_produit'],
+                        'lot_numero' => $row['lot_numero'],
+                        'date_expiration' => $row['date_expiration'],
+                        'quantite_disponible' => intval($row['quantite_disponible']),
+                        'prix_achat' => floatval($row['prix_achat']),
+                        'prix_unitaire' => floatval($row['prix_unitaire']),
+                        'produit_trouve' => false,
+                        'nom_produit' => '-',
+                        'variation_prix' => '-'
+                    ];
+
                     // Vérifier si le produit existe
                     $produitRef = $this->firestore
                         ->collection('pharmacies')
@@ -342,29 +355,22 @@ class RavitaillementController extends Controller
 
                     $produit = $produitRef->snapshot();
                     
-                    if (!$produit->exists()) {
+                    if ($produit->exists()) {
+                        $produitData = $produit->data();
+                        $prixActuel = $produitData['prix_unitaire'] ?? 0;
+                        
+                        // Calculer la variation de prix
+                        $nouveauPrix = floatval($row['prix_unitaire']);
+                        $variationPrix = $prixActuel > 0 ? (($nouveauPrix - $prixActuel) / $prixActuel) * 100 : 100;
+
+                        // Mettre à jour les données du produit trouvé
+                        $previewRow['produit_trouve'] = true;
+                        $previewRow['nom_produit'] = $produitData['nom'];
+                        $previewRow['variation_prix'] = round($variationPrix, 2);
+                        $previewRow['prix_actuel'] = $prixActuel;
+                    } else {
                         $errors["ligne_" . ($i + 1)][] = "Produit non trouvé";
-                        continue;
                     }
-
-                    $produitData = $produit->data();
-                    $prixActuel = $produitData['prix_unitaire'] ?? 0;
-                    
-                    // Calculer la variation de prix
-                    $nouveauPrix = floatval($row['prix_unitaire']);
-                    $variationPrix = $prixActuel > 0 ? (($nouveauPrix - $prixActuel) / $prixActuel) * 100 : 100;
-
-                    $previewRow = [
-                        'id_produit' => $row['id_produit'],
-                        'nom_produit' => $produitData['nom'],
-                        'lot_numero' => $row['lot_numero'],
-                        'date_expiration' => $row['date_expiration'],
-                        'quantite_disponible' => intval($row['quantite_disponible']),
-                        'prix_achat' => floatval($row['prix_achat']),
-                        'prix_unitaire' => $nouveauPrix,
-                        'prix_actuel' => $prixActuel,
-                        'variation_prix' => round($variationPrix, 2)
-                    ];
 
                     $preview[] = $previewRow;
                     $importData[] = $previewRow;
@@ -382,7 +388,7 @@ class RavitaillementController extends Controller
                 'preview' => $preview,
                 'errors' => $errors,
                 'total_rows' => count($rows) - 1,
-                'valid_rows' => count($preview)
+                'valid_rows' => count(array_filter($preview, function($row) { return $row['produit_trouve']; }))
             ]);
 
         } catch (\Exception $e) {

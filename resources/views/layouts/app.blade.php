@@ -10,22 +10,28 @@
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- SweetAlert2 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <!-- plugins:css -->
-   
-  <link rel="stylesheet" href="vendors/feather/feather.css">
-  <link rel="stylesheet" href="vendors/ti-icons/css/themify-icons.css">
-  <link rel="stylesheet" href="vendors/css/vendor.bundle.base.css">
+  <link rel="stylesheet" href="/vendors/feather/feather.css">
+  <link rel="stylesheet" href="/vendors/ti-icons/css/themify-icons.css">
+  <link rel="stylesheet" href="/vendors/css/vendor.bundle.base.css">
   <!-- endinject -->
   <!-- Plugin css for this page -->
-  <link rel="stylesheet" href="vendors/datatables.net-bs4/dataTables.bootstrap4.css">
-  <link rel="stylesheet" href="vendors/ti-icons/css/themify-icons.css">
-  <link rel="stylesheet" type="text/css" href="js/select.dataTables.min.css">
+  <link rel="stylesheet" href="/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
+  <link rel="stylesheet" href="/vendors/ti-icons/css/themify-icons.css">
+  <link rel="stylesheet" type="text/css" href="/js/select.dataTables.min.css">
   <!-- End plugin css for this page -->
   <!-- inject:css -->
-  <link rel="stylesheet" href="css/vertical-layout-light/style.css">
-  <link rel="stylesheet" href="vendors/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="/css/vertical-layout-light/style.css">
+  <link rel="stylesheet" href="/vendors/mdi/css/materialdesignicons.min.css">
   <!-- endinject -->
-  <link rel="shortcut icon" href="images/image.png" />
+  <link rel="shortcut icon" href="/images/image.png" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -54,6 +60,78 @@
     .btn-sm.btn-action {
         padding: 0.25rem 0.75rem 0.25rem 2.25rem;
     }
+
+    /* Style personnalisé pour les boutons radio */
+    .custom-radio {
+        display: flex;
+        align-items: center;
+        margin-right: 1.5rem;
+    }
+
+    .custom-radio input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .custom-radio label {
+        position: relative;
+        padding-left: 2rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .custom-radio label:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #6a11cb;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .custom-radio label:after {
+        content: '';
+        position: absolute;
+        left: 0.25rem;
+        top: 50%;
+        transform: translateY(-50%) scale(0);
+        width: 0.75rem;
+        height: 0.75rem;
+        background: #6a11cb;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .custom-radio input[type="radio"]:checked + label:before {
+        border-color: #6a11cb;
+        background: #ffffff;
+    }
+
+    .custom-radio input[type="radio"]:checked + label:after {
+        transform: translateY(-50%) scale(1);
+    }
+
+    .custom-radio input[type="radio"]:focus + label:before {
+        box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+    }
+
+    .custom-radio:hover label:before {
+        border-color: #6a11cb;
+    }
+
+    /* Conteneur des boutons radio */
+    .radio-container {
+        display: flex;
+        gap: 1rem;
+        padding: 0.5rem 0;
+    }
+
     body {
         overflow: hidden;
     }
@@ -172,25 +250,25 @@
   <!-- container-scroller -->
 
   <!-- plugins:js -->
-  <script src="vendors/js/vendor.bundle.base.js"></script>
+  <script src="/vendors/js/vendor.bundle.base.js"></script>
   <!-- endinject -->
   <!-- Plugin js for this page -->
-  <script src="vendors/chart.js/Chart.min.js"></script>
-  <script src="vendors/datatables.net/jquery.dataTables.js"></script>
-  <script src="vendors/datatables.net-bs4/dataTables.bootstrap4.js"></script>
-  <script src="js/dataTables.select.min.js"></script>
+  <script src="/vendors/chart.js/Chart.min.js"></script>
+  <script src="/vendors/datatables.net/jquery.dataTables.js"></script>
+  <script src="/vendors/datatables.net-bs4/dataTables.bootstrap4.js"></script>
+  <script src="/js/dataTables.select.min.js"></script>
 
   <!-- End plugin js for this page -->
   <!-- inject:js -->
-  <script src="js/off-canvas.js"></script>
-  <script src="js/hoverable-collapse.js"></script>
-  <script src="js/template.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/todolist.js"></script>
+  <script src="/js/off-canvas.js"></script>
+  <script src="/js/hoverable-collapse.js"></script>
+  <script src="/js/template.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/todolist.js"></script>
   <!-- endinject -->
   <!-- Custom js for this page-->
-  <script src="js/dashboard.js"></script>
-  <script src="js/Chart.roundedBarCharts.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/Chart.roundedBarCharts.js"></script>
   <!-- End custom js for this page-->
   <script>
     // Fonction pour masquer les messages après 3 secondes
@@ -203,17 +281,19 @@
         if (successMessage) {
             setTimeout(function() {
                 successMessage.style.display = 'none';
-            }, 3000);
+            }, 30000);
         }
 
         // Masquez les messages d'erreur après 3 secondes
         errorMessages.forEach(function(errorMessage) {
             setTimeout(function() {
                 errorMessage.style.display = 'none';
-            }, 3000);
+            }, 30000);
         });
     };
 </script>
+
+@stack('scripts')
 
 </body>
 

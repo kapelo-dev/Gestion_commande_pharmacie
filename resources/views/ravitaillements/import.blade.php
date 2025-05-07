@@ -46,6 +46,7 @@
                                         <th>Prix d'achat</th>
                                         <th>Prix unitaire</th>
                                         <th>Variation prix</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="previewData">
@@ -84,15 +85,21 @@ $(document).ready(function() {
                 
                 if (response.preview && response.preview.length > 0) {
                     response.preview.forEach(function(item) {
-                        let row = `<tr>
+                        const rowClass = item.produit_trouve ? 'table-success' : 'table-warning';
+                        const statusBadgeClass = item.produit_trouve ? 'badge bg-success' : 'badge bg-warning text-dark';
+                        const statusText = item.produit_trouve ? 'Trouvé' : 'Non trouvé';
+                        const variationText = item.produit_trouve ? `${item.variation_prix}%` : '-';
+                        
+                        let row = `<tr class="${rowClass}">
                             <td>${item.id_produit}</td>
                             <td>${item.nom_produit}</td>
                             <td>${item.lot_numero}</td>
                             <td>${item.date_expiration}</td>
                             <td>${item.quantite_disponible}</td>
-                            <td>${item.prix_achat}</td>
-                            <td>${item.prix_unitaire}</td>
-                            <td>${item.variation_prix}%</td>
+                            <td>${item.prix_achat} FCFA</td>
+                            <td>${item.prix_unitaire} FCFA</td>
+                            <td>${variationText}</td>
+                            <td><span class="${statusBadgeClass}">${statusText}</span></td>
                         </tr>`;
                         $('#previewData').append(row);
                     });
@@ -100,7 +107,7 @@ $(document).ready(function() {
                 }
                 
                 if (response.errors && Object.keys(response.errors).length > 0) {
-                    let errorHtml = '<ul>';
+                    let errorHtml = '<ul class="mb-0">';
                     Object.entries(response.errors).forEach(([key, errors]) => {
                         errors.forEach(error => {
                             errorHtml += `<li>${error}</li>`;
