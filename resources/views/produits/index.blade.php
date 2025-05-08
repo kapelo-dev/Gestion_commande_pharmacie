@@ -152,7 +152,7 @@
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editProduitModal{{ $produit['id'] }}">
                                                 <i class="fas fa-edit"></i> 
-                                            </button>
+                                        </button>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ $produit['id'] }}')" title="Supprimer">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -191,14 +191,14 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="id">ID (optionnel)</label>
+                    <div class="form-group">
+                        <label for="id">ID (optionnel)</label>
                                 <input type="text" class="form-control form-control-sm" id="id" name="id">
                             </div>
-                        </div>
+                    </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="nom">Nom</label>
+                    <div class="form-group">
+                        <label for="nom">Nom</label>
                                 <input type="text" class="form-control form-control-sm" id="nom" name="nom" required>
                             </div>
                         </div>
@@ -211,8 +211,8 @@
 
                     <div class="row">
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="quantite_en_stock">Quantité en stock</label>
+                    <div class="form-group">
+                        <label for="quantite_en_stock">Quantité en stock</label>
                                 <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" min="0" value="0" readonly>
                                 <small class="text-muted">La quantité en stock est gérée automatiquement via les ravitaillements et les ventes</small>
                             </div>
@@ -222,15 +222,15 @@
                                 <label for="prix_unitaire">Prix Unitaire</label>
                                 <input type="number" class="form-control form-control-sm" id="prix_unitaire" name="prix_unitaire" min="0" step="0.01" required>
                             </div>
-                        </div>
+                    </div>
                         <div class="col-md-4">
-                            <div class="form-group">
+                    <div class="form-group">
                                 <label for="sur_ordonnance">Sur ordonnance</label>
                                 <select class="form-control form-control-sm" id="sur_ordonnance" name="sur_ordonnance" required>
-                                    <option value="true">Oui</option>
-                                    <option value="false">Non</option>
-                                </select>
-                            </div>
+                            <option value="true">Oui</option>
+                            <option value="false">Non</option>
+                        </select>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -259,8 +259,8 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="nom">Nom</label>
+                        <div class="form-group">
+                            <label for="nom">Nom</label>
                                     <input type="text" class="form-control form-control-sm" id="nom" name="nom" value="{{ $produit['nom'] }}" required>
                                 </div>
                             </div>
@@ -273,8 +273,8 @@
 
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="quantite_en_stock">Quantité en stock</label>
+                        <div class="form-group">
+                            <label for="quantite_en_stock">Quantité en stock</label>
                                     <input type="number" class="form-control form-control-sm" id="quantite_en_stock" name="quantite_en_stock" value="{{ $produit['quantite_en_stock'] }}" readonly>
                                     <small class="text-muted">La quantité en stock est gérée automatiquement via les ravitaillements et les ventes</small>
                                 </div>
@@ -284,15 +284,15 @@
                                     <label for="prix_unitaire">Prix Unitaire</label>
                                     <input type="number" class="form-control form-control-sm" id="prix_unitaire" name="prix_unitaire" value="{{ $produit['prix_unitaire'] }}" min="0" step="0.01" required>
                                 </div>
-                            </div>
+                        </div>
                             <div class="col-md-4">
-                                <div class="form-group">
+                        <div class="form-group">
                                     <label for="sur_ordonnance">Sur ordonnance</label>
                                     <select class="form-control form-control-sm" id="sur_ordonnance" name="sur_ordonnance" required>
-                                        <option value="true" {{ $produit['sur_ordonnance'] ? 'selected' : '' }}>Oui</option>
-                                        <option value="false" {{ !$produit['sur_ordonnance'] ? 'selected' : '' }}>Non</option>
-                                    </select>
-                                </div>
+                                <option value="true" {{ $produit['sur_ordonnance'] ? 'selected' : '' }}>Oui</option>
+                                <option value="false" {{ !$produit['sur_ordonnance'] ? 'selected' : '' }}>Non</option>
+                            </select>
+                        </div>
                             </div>
                         </div>
                     </div>
@@ -328,18 +328,18 @@ function confirmDelete(produitId) {
 
 // Animation des messages de succès
 const successMessage = document.querySelector('.alert-success');
-if (successMessage) {
+    if (successMessage) {
     setTimeout(() => {
         successMessage.style.transition = 'opacity 0.5s ease';
         successMessage.style.opacity = '0';
         setTimeout(() => {
             successMessage.remove();
         }, 500);
-    }, 3000);
-}
+        }, 3000);
+    }
 
 // Filtrage des produits
-const searchInput = document.getElementById('searchInput');
+    const searchInput = document.getElementById('searchInput');
 if (searchInput) {
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.trim().toLowerCase();
@@ -347,13 +347,13 @@ if (searchInput) {
         
         rows.forEach(row => {
             if (!row.querySelector('td[colspan]')) {
-                const nomProduit = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const nomProduit = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
                 const description = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
                 
                 if (nomProduit.includes(searchTerm) || description.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
                 }
             }
         });

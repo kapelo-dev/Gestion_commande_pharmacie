@@ -281,7 +281,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+    </div>
 
     <!-- Modal pour Ajouter -->
     <div class="modal fade" id="addRavitaillementModal" tabindex="-1" aria-labelledby="addRavitaillementModalLabel" aria-hidden="true">
