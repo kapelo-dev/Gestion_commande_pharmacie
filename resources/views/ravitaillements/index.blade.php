@@ -144,7 +144,7 @@
 </style>
 
 <div class="main-content">
-    <div class="container">
+<div class="container">
         <div class="page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h4>Liste des Ravitaillements</h4>
@@ -159,21 +159,21 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div id="successMessage" class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+    @if(session('success'))
+        <div id="successMessage" class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
 
-        @if(session('error'))
-            <div id="errorMessage" class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
+    @if(session('error'))
+        <div id="errorMessage" class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
 
         <h1></h1>
 
-        <!-- Liste des ravitaillements -->
+    <!-- Liste des ravitaillements -->
         <div class="table-responsive mb-5">
             <table class="table table-striped table-hover align-middle" id="ravitaillements-table">
                 <thead class="table-light">
@@ -182,13 +182,13 @@
                         <th style="width: 20%">Date</th>
                         <th style="width: 20%">Fichier</th>
                         <th class="text-center" style="width: 15%">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($ravitaillements as $index => $ravitaillement)
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($ravitaillements as $index => $ravitaillement)
                         <tr data-ravitaillement-id="{{ $ravitaillement['id'] }}">
                             <td class="text-center">{{ $index + 1 }}</td>
-                            <td>{{ $ravitaillement['date'] }}</td>
+                        <td>{{ $ravitaillement['date'] }}</td>
                             <td>{{ $ravitaillement['fichier'] }}</td>
                             <td class="text-center">
                                 <div class="btn-group" role="group">
@@ -198,31 +198,31 @@
                                         title="Voir les détails">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                <button type="button"
+                            <button type="button"
                                         class="btn btn-danger btn-sm"
                                         onclick="confirmDelete('{{ $ravitaillement['id'] }}')"
                                         title="Supprimer">
                                         <i class="fas fa-trash"></i>
-                                </button>
+                            </button>
                                 </div>
-                                <form id="delete-form-{{ $ravitaillement['id'] }}"
+                            <form id="delete-form-{{ $ravitaillement['id'] }}"
                                     action="{{ route('ravitaillements.destroy', $ravitaillement['id']) }}"
-                                    method="POST"
-                                    style="display: none;">
-                                    @csrf
+                                method="POST"
+                                style="display: none;">
+                                @csrf
                                     @method('DELETE')
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
                     @if(count($ravitaillements) === 0)
                         <tr>
                             <td colspan="4" class="text-center">Aucun ravitaillement trouvé</td>
                         </tr>
                     @endif
-                </tbody>
-            </table>
-        </div>
+            </tbody>
+        </table>
+    </div>
 
         <!-- Modal pour l'importation Excel -->
         <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
@@ -283,53 +283,53 @@
             </div>
         </div>
 
-        <!-- Modal pour Ajouter -->
-        <div class="modal fade" id="addRavitaillementModal" tabindex="-1" aria-labelledby="addRavitaillementModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addRavitaillementModalLabel">Ajouter un Ravitaillement</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                        <form action="{{ route('ravitaillements.store') }}" method="POST">
-                            @csrf
+    <!-- Modal pour Ajouter -->
+    <div class="modal fade" id="addRavitaillementModal" tabindex="-1" aria-labelledby="addRavitaillementModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addRavitaillementModalLabel">Ajouter un Ravitaillement</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <form action="{{ route('ravitaillements.store') }}" method="POST">
+                        @csrf
 
-                            <div class="form-group">
-                                <label for="fournisseur">Fournisseur</label>
-                                <input type="text" class="form-control" id="fournisseur" name="fournisseur" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="fournisseur">Fournisseur</label>
+                            <input type="text" class="form-control" id="fournisseur" name="fournisseur" required>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="lot_numero">N° Lot</label>
-                                <input type="text" class="form-control" id="lot_numero" name="lot_numero" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="lot_numero">N° Lot</label>
+                            <input type="text" class="form-control" id="lot_numero" name="lot_numero" required>
+                        </div>
 
-                            <div class="form-group produit-autocomplete-container">
-                                <label for="produit_ravitaille">Produit</label>
-                                <input type="text" class="form-control produit-input" id="produit_ravitaille" name="produit_ravitaille" placeholder="Rechercher un produit..." required>
-                                <input type="hidden" id="produit_id" name="produit_id">
-                                <div class="autocomplete-list"></div>
-                            </div>
+                        <div class="form-group produit-autocomplete-container">
+                            <label for="produit_ravitaille">Produit</label>
+                            <input type="text" class="form-control produit-input" id="produit_ravitaille" name="produit_ravitaille" placeholder="Rechercher un produit..." required>
+                            <input type="hidden" id="produit_id" name="produit_id">
+                            <div class="autocomplete-list"></div>
+                        </div>
 
 
-                            <div class="form-group">
-                                <label for="date_expiration">Date d'expiration</label>
-                                <input type="date" class="form-control" id="date_expiration" name="date_expiration" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="date_expiration">Date d'expiration</label>
+                            <input type="date" class="form-control" id="date_expiration" name="date_expiration" required>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="quantite_disponible">Quantité </label>
-                                <input type="number" class="form-control" id="quantite_disponible" name="quantite_disponible" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="quantite_disponible">Quantité </label>
+                            <input type="number" class="form-control" id="quantite_disponible" name="quantite_disponible" required>
+                        </div>
 
-                            <div class="form-group text-right">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
-                                <button type="submit" class="btn btn-success">Ajouter</button>
-                            </div>
-                        </form>
+                        <div class="form-group text-right">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                            <button type="submit" class="btn btn-success">Ajouter</button>
+                        </div>
+                    </form>
                     </div>
                 </div>
             </div>
@@ -500,8 +500,8 @@
 
                     if (response.error) {
                         Swal.fire('Erreur', response.error, 'error');
-                        return;
-                    }
+                return;
+            }
 
                     // Vider le tableau existant
                     $('#previewTableBody').empty();
@@ -561,6 +561,14 @@
 
         // Gestion de la validation de l'importation
         $('#validateImport').click(function() {
+            // Désactiver le bouton et ajouter le spinner
+            const validateButton = $(this);
+            validateButton.prop('disabled', true);
+            validateButton.html(`
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Validation en cours...
+            `);
+
             $.ajax({
                 url: '{{ route("ravitaillements.import.process") }}',
                 type: 'POST',
@@ -568,20 +576,42 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('importExcelModal'));
-                    if (modal) {
-                        modal.hide();
-                    }
-                    Swal.fire('Succès', 'Importation réussie', 'success').then(() => {
-                        location.reload();
-                    });
+                    // Fermer d'abord la modal
+                    $('#importExcelModal').modal('hide');
+                    
+                    // Attendre que la modal soit complètement fermée
+                    setTimeout(() => {
+                        // Réactiver le bouton et restaurer son texte original
+                        validateButton.prop('disabled', false);
+                        validateButton.html('Valider l\'importation');
+
+                        // Afficher le Sweet Alert de succès
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Succès !',
+                            text: 'Importation réussie',
+                            showConfirmButton: true,
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            location.reload();
+                        });
+                    }, 500); // Attendre 500ms pour s'assurer que la modal est bien fermée
                 },
                 error: function(xhr) {
+                    // Réactiver le bouton et restaurer son texte original
+                    validateButton.prop('disabled', false);
+                    validateButton.html('Valider l\'importation');
+
                     let errorMessage = 'Une erreur est survenue lors de l\'importation.';
                     if (xhr.responseJSON && xhr.responseJSON.error) {
                         errorMessage = xhr.responseJSON.error;
                     }
-                    Swal.fire('Erreur', errorMessage, 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: errorMessage,
+                        confirmButtonText: 'OK'
+                    });
                 }
             });
         });

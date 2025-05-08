@@ -7,9 +7,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">Préparation des Achats</h4>
-                    <button id="copyIds" class="btn btn-primary">
-                        <i class="mdi mdi-content-copy"></i> Copier les IDs sélectionnés
-                    </button>
+                    <div>
+                        <button id="generateExcel" class="btn btn-success me-2">
+                            <i class="mdi mdi-file-excel"></i> Générer Excel
+                        </button>
+                        <button id="copyIds" class="btn btn-primary">
+                            <i class="mdi mdi-content-copy"></i> Copier les IDs sélectionnés
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if(session('error'))
@@ -30,6 +35,7 @@
                                     </th>
                                     <th>ID Produit</th>
                                     <th>Nom du Produit</th>
+                                    <th width="150">Quantité</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -46,6 +52,12 @@
                                     </td>
                                     <td>{{ $produit['id'] }}</td>
                                     <td>{{ $produit['nom'] }}</td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm quantite-input" 
+                                               min="1" placeholder="Quantité"
+                                               data-id="{{ $produit['id'] }}"
+                                               disabled>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -68,17 +80,94 @@ document.addEventListener('DOMContentLoaded', function() {
         "pageLength": 25,
         "order": [[2, "asc"]], // Trier par nom de produit
         "columnDefs": [
-            { "orderable": false, "targets": 0 } // Désactiver le tri sur la colonne des checkboxes
+            { "orderable": false, "targets": [0, 3] } // Désactiver le tri sur la colonne des checkboxes et quantités
         ]
     });
 
     // Sélectionner/Désélectionner tout
     document.getElementById('selectAll').addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('.produit-checkbox');
-        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        const quantiteInputs = document.querySelectorAll('.quantite-input');
+        
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.checked = this.checked;
+            quantiteInputs[index].disabled = !this.checked;
+        });
     });
 
-    // Copier les IDs
+    // Activer/Désactiver le champ quantité lors de la sélection d'un produit
+    document.querySelectorAll('.produit-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const quantiteInput = document.querySelector(`.quantite-input[data-id="${this.dataset.id}"]`);
+            quantiteInput.disabled = !this.checked;
+            if (!this.checked) {
+                quantiteInput.value = '';
+            }
+        });
+    });
+
+    // Générer le fichier Excel
+    document.getElementById('generateExcel').addEventListener('click', function() {
+        const selectedProducts = [];
+        document.querySelectorAll('.produit-checkbox:checked').forEach(checkbox => {
+            const quantiteInput = document.querySelector(`.quantite-input[data-id="${checkbox.dataset.id}"]`);
+            if (quantiteInput && quantiteInput.value) {
+                selectedProducts.push({
+                    id: checkbox.dataset.id,
+                    quantite: quantiteInput.value
+                });
+            }
+        });
+
+        if (selectedProducts.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Attention',
+                text: 'Veuillez sélectionner au moins un produit et spécifier les quantités',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        // Envoyer les données au serveur pour générer l'Excel
+        fetch('{{ route("preparation-achats.generate-excel") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ products: selectedProducts })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'preparation_achats.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès',
+                text: 'Le fichier Excel a été généré avec succès',
+                confirmButtonText: 'OK'
+            });
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Une erreur est survenue lors de la génération du fichier Excel',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
+
+    // Copier les IDs (code existant)
     document.getElementById('copyIds').addEventListener('click', function() {
         const selectedCheckboxes = document.querySelectorAll('.produit-checkbox:checked');
         const selectedProducts = Array.from(selectedCheckboxes).map(checkbox => ({
@@ -96,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Créer le texte avec les IDs et noms sur des lignes séparées
         const textToCopy = selectedProducts.map(product => `${product.id}`).join('\n');
 
         navigator.clipboard.writeText(textToCopy)
@@ -198,13 +286,18 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #3c3a8c;
 }
 
-.table th {
-    font-weight: 600;
-    background-color: #f8f9fa;
+.btn-success {
+    margin-right: 10px;
 }
 
-.text-muted.small {
-    font-size: 0.875rem;
+.quantite-input {
+    width: 100px;
+    display: inline-block;
+}
+
+.quantite-input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
 }
 </style>
 @endpush

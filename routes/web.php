@@ -93,3 +93,4 @@ Route::prefix('destockage')->name('destockage.')->group(function () {
 
 // Préparation des achats
 Route::get('/preparation-achats', [PreparationAchatsController::class, 'index'])->name('preparation-achats.index');
+Route::post('/preparation-achats/generate-excel', [PreparationAchatsController::class, 'generateExcel'])->name('preparation-achats.generate-excel');
