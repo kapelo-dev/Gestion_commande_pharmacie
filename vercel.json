@@ -1,10 +1,9 @@
 {
     "version": 2,
-    "framework": null,
     "builds": [
         {
-            "src": "api/index.php",
-            "use": "vercel-php@0.6.0"
+            "src": "/api/index.php",
+            "use": "@vercel/php"
         },
         {
             "src": "public/**",
@@ -12,6 +11,22 @@
         }
     ],
     "routes": [
+        {
+            "src": "/build/(.*)",
+            "dest": "/public/build/$1"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/public/favicon.ico"
+        },
+        {
+            "src": "/robots.txt",
+            "dest": "/public/robots.txt"
+        },
+        {
+            "src": "/(css|js|images|fonts|assets)/(.*)",
+            "dest": "/public/$1/$2"
+        },
         {
             "src": "/",
             "dest": "/login"
@@ -21,9 +36,8 @@
             "dest": "/api/index.php"
         }
     ],
-    "buildCommand": "chmod +x build.sh && ./build.sh",
-    "outputDirectory": "dist",
     "env": {
+        "APP_NAME": "Laravel",
         "APP_ENV": "production",
         "APP_DEBUG": "false",
         "APP_URL": "https://your-project-url.vercel.app",
@@ -35,8 +49,6 @@
         "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_DRIVER": "array",
         "LOG_CHANNEL": "stderr",
-        "SESSION_DRIVER": "cookie",
-        "SSR_TEMP_PATH": "/tmp/ssr",
-        "NODE_PATH": "node"
+        "SESSION_DRIVER": "cookie"
     }
 } 
