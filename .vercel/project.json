@@ -1,0 +1,12 @@
+{
+    "projectId": "prj_your_project_id",
+    "orgId": "your_org_id",
+    "settings": {
+        "framework": null,
+        "buildCommand": "composer install --no-dev && npm install && npm run build",
+        "outputDirectory": "public",
+        "php": {
+            "version": "8.1"
+        }
+    }
+} 
