@@ -26,7 +26,8 @@
             "use": "@vercel/static"
         }
     ],
-    "outputDirectory": "public",
+    "buildCommand": "chmod +x build.sh && ./build.sh",
+    "outputDirectory": "dist",
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
