@@ -26,10 +26,18 @@ RUN a2enmod rewrite
 
 # Copie des fichiers du projet
 WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+
+# Installation des dépendances Composer
+RUN composer install --no-dev --no-scripts --no-autoloader
+
+# Copie du reste des fichiers
 COPY . .
 
-# Installation des dépendances
-RUN composer install --no-dev --optimize-autoloader
+# Finalisation de Composer
+RUN composer dump-autoload --optimize --no-dev
+
+# Installation et build des assets
 RUN npm install && npm run build
 
 # Permissions pour Laravel
