@@ -1,0 +1,127 @@
+ALGORITHME DE GESTION DES COMMANDES
+================================
+
+1. AFFICHAGE DES COMMANDES (Méthode showCommandes)
+------------------------------------------------
+DÉBUT
+    SI pharmacie_id NON DÉFINI ALORS
+        RETOURNER erreur "Pharmacie non sélectionnée"
+    FIN SI
+
+    // Récupération des commandes
+    commandes ← RÉCUPÉRER commandes DE pharmacies/{pharmacie_id}/commandes
+    
+    // Séparation des commandes par statut
+    commandesValidees ← FILTRER commandes OÙ status_commande = "validée"
+    commandesEnCours ← FILTRER commandes OÙ status_commande = "en_cours"
+    
+    AFFICHER vue avec {commandesValidees, commandesEnCours}
+FIN
+
+2. MISE À JOUR DU STATUT (Méthode updateStatus)
+----------------------------------------------
+DÉBUT
+    ENTRÉES: commande_id, nouveau_status, montant_percu, montant_rendu
+    
+    SI pharmacie_id NON DÉFINI ALORS
+        RETOURNER erreur "Pharmacie non sélectionnée"
+    FIN SI
+    
+    // Mise à jour du statut
+    METTRE À JOUR commande.status_commande ← nouveau_status
+    
+    SI nouveau_status = "récupérée" ALORS
+        APPELER createVenteFromCommande(commandeData, montant_percu, montant_rendu)
+        RETOURNER vers page des ventes
+    FIN SI
+    
+    RETOURNER vers page des commandes
+FIN
+
+3. CRÉATION DE VENTE À PARTIR DE COMMANDE (Méthode createVenteFromCommande)
+-------------------------------------------------------------------------
+DÉBUT
+    ENTRÉES: commandeData, montantPercu, montantRendu
+    
+    montantTotal ← 0
+    coutTotal ← 0
+    produitsVendus ← []
+    alertesExpiration ← []
+    
+    // Récupération des produits de la pharmacie
+    POUR CHAQUE produit DANS pharmacie.produits FAIRE
+        STOCKER {id, prix_unitaire, quantite_en_stock, sur_ordonnance}
+    FIN POUR
+    
+    POUR CHAQUE produit DANS commandeData.produits FAIRE
+        SI produit existe ALORS
+            prixTotal ← produit.quantite × produit.prix_unitaire
+            
+            // Gestion du stock
+            stocks ← RÉCUPÉRER stocks du produit
+            quantiteDisponible ← 0
+            
+            POUR CHAQUE stock DANS stocks FAIRE
+                SI stock.quantite_disponible > 0 ALORS
+                    // Vérification expiration (3 mois)
+                    SI date_expiration - date_actuelle ≤ 90 jours ALORS
+                        AJOUTER alerte d'expiration
+                    FIN SI
+                    
+                    quantiteDisponible += stock.quantite_disponible
+                FIN SI
+            FIN POUR
+            
+            SI quantiteDisponible < produit.quantite ALORS
+                LEVER Exception "Stock insuffisant"
+            FIN SI
+            
+            // Mise à jour des stocks (FEFO - First Expired, First Out)
+            TRIER stocks PAR date_expiration ASC
+            quantiteRestante ← produit.quantite
+            coutTotalProduit ← 0
+            
+            POUR CHAQUE stock DANS stocks FAIRE
+                SI quantiteRestante > 0 ALORS
+                    quantiteARetirer ← MIN(quantiteRestante, stock.quantite_disponible)
+                    coutLot ← quantiteARetirer × stock.prix_achat
+                    
+                    METTRE À JOUR stock.quantite_disponible
+                    quantiteRestante -= quantiteARetirer
+                    coutTotalProduit += coutLot
+                FIN SI
+            FIN POUR
+            
+            // Mise à jour quantité totale du produit
+            CALCULER ET METTRE À JOUR nouvelle quantité totale
+            
+            AJOUTER produit aux produitsVendus
+            montantTotal += prixTotal
+            coutTotal += coutTotalProduit
+        FIN SI
+    FIN POUR
+    
+    // Création de la vente
+    vente ← {
+        date_vente: date_actuelle,
+        montant_total: montantTotal,
+        cout_total: coutTotal,
+        benefice_brut: montantTotal - coutTotal,
+        produits_vendus: produitsVendus,
+        vendeur: pharmacien_prenom,
+        montant_percu: montantPercu,
+        montant_rendu: montantRendu,
+        source: "commande",
+        alertes_expiration: alertesExpiration
+    }
+    
+    AJOUTER vente à la collection ventes
+FIN
+
+NOTES IMPORTANTES:
+-----------------
+1. L'algorithme utilise la méthode FEFO (First Expired, First Out) pour la gestion des stocks
+2. Vérification automatique des dates d'expiration (alerte à 3 mois)
+3. Calcul précis des coûts et bénéfices pour chaque vente
+4. Traçabilité complète des stocks utilisés pour chaque vente
+5. Gestion des erreurs en cas de stock insuffisant 

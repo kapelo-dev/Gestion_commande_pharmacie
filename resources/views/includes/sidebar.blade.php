@@ -51,7 +51,12 @@
             </a>
         </li>
         
-        
+        <li class="nav-item">
+            <a href="{{ route('preparation-achats.index') }}" class="nav-link {{ Request::routeIs('preparation-achats.*') ? 'active' : '' }}">
+                <i class="mdi mdi-cart-plus" style="margin-right: 10px;"></i>
+                <span class="menu-title">Préparation Achats</span>
+            </a>
+        </li>
 
       
     </ul>

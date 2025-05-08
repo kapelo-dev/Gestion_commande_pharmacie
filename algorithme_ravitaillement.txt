@@ -1,0 +1,175 @@
+ALGORITHME DE GESTION DES RAVITAILLEMENTS
+===================================
+
+1. INITIALISATION DU CONTROLLER
+------------------------------
+DÉBUT
+    ENTRÉES: credentials_firebase
+    
+    firestore ← INITIALISER FirestoreClient(credentials)
+    pharmacie_id ← RÉCUPÉRER ID depuis la session
+    
+    SI pharmacie_id NON DÉFINI ALORS
+        LEVER Exception "ID de la pharmacie non disponible"
+    FIN SI
+FIN
+
+2. AFFICHAGE DES RAVITAILLEMENTS (Méthode index)
+----------------------------------------------
+DÉBUT
+    SI pharmacie_id EST VIDE OU INVALIDE ALORS
+        RETOURNER erreur "ID de la pharmacie invalide"
+    FIN SI
+
+    ravitaillements ← []
+    ravitaillementsRef ← RÉCUPÉRER ravitaillements DE pharmacies/{pharmacie_id}/ravitaillements
+    TRIER PAR date_ravitaillement DESC
+
+    POUR CHAQUE doc DANS ravitaillementsRef FAIRE
+        // Formatage de la date
+        SI doc.date_ravitaillement EST Timestamp ALORS
+            date ← FORMATER(doc.date_ravitaillement, "d/m/Y")
+        SINON
+            date ← FORMATER(doc.date_ravitaillement)
+        FIN SI
+
+        AJOUTER à ravitaillements {
+            id: doc.id,
+            date: date,
+            fichier: doc.fichier_excel,
+            fournisseur: doc.fournisseur ?? "N/A",
+            montant_total: FORMATER(doc.montant_total, "0.00 F")
+        }
+    FIN POUR
+
+    AFFICHER vue avec ravitaillements
+FIN
+
+3. ENREGISTREMENT MANUEL D'UN RAVITAILLEMENT (Méthode store)
+--------------------------------------------------------
+DÉBUT
+    ENTRÉES: {
+        fournisseur,
+        lot_numero,
+        produit_ravitaille,
+        date_expiration,
+        quantite_disponible,
+        prix_achat,
+        produit_id
+    }
+
+    // Validation des données
+    VALIDER {
+        fournisseur: requis, chaîne,
+        lot_numero: requis, chaîne,
+        produit_ravitaille: requis, chaîne,
+        date_expiration: requis, date,
+        quantite_disponible: requis, entier > 0,
+        prix_achat: requis, nombre ≥ 0
+    }
+
+    dateRavitaillement ← DATE_ACTUELLE
+    dateExpirationISO ← CONVERTIR date_expiration EN format ISO
+
+    // Création du stock
+    produitRef ← RÉFÉRENCE produit
+    stockRef ← AJOUTER à produitRef.stock {
+        date_expiration: dateExpirationISO,
+        lot_numero: lot_numero,
+        quantite_disponible: quantite_disponible,
+        prix_achat: prix_achat
+    }
+
+    // Création du ravitaillement
+    prixTotal ← prix_achat × quantite_disponible
+    ravitaillementRef ← AJOUTER à ravitaillements {
+        date_ravitaillement: dateRavitaillement,
+        fournisseur: fournisseur,
+        produits: [{
+            id_produit: produit_id,
+            nom_produit: produit.nom,
+            lot_numero: lot_numero,
+            quantite: quantite_disponible,
+            prix_achat: prix_achat,
+            prix_total: prixTotal,
+            date_expiration: dateExpirationISO
+        }],
+        montant_total: prixTotal
+    }
+
+    // Mise à jour quantité totale du produit
+    quantiteTotale ← 0
+    POUR CHAQUE stock DANS produit.stocks FAIRE
+        quantiteTotale += stock.quantite_disponible
+    FIN POUR
+    METTRE À JOUR produit.quantite_en_stock ← quantiteTotale
+FIN
+
+4. IMPORTATION DE RAVITAILLEMENT (Méthode processImport)
+----------------------------------------------------
+DÉBUT
+    ENTRÉES: fichier_excel
+
+    // Validation du fichier
+    SI NON fichier_excel ALORS
+        RETOURNER erreur "Fichier manquant"
+    FIN SI
+
+    // Vérification du format
+    en_tetes_requis ← ['id_produit', 'lot_numero', 'date_expiration', 'quantite_disponible', 'prix_achat', 'prix_unitaire']
+    SI NON VALIDER_EN_TETES(fichier_excel, en_tetes_requis) ALORS
+        RETOURNER erreur "Format invalide"
+    FIN SI
+
+    produits ← []
+    montantTotal ← 0
+
+    POUR CHAQUE ligne DANS fichier_excel FAIRE
+        // Mise à jour du stock
+        AJOUTER à produit.stock {
+            lot_numero: ligne.lot_numero,
+            date_expiration: ligne.date_expiration,
+            quantite_disponible: ligne.quantite_disponible,
+            prix_achat: ligne.prix_achat
+        }
+
+        // Mise à jour prix unitaire
+        METTRE À JOUR produit.prix_unitaire ← ligne.prix_unitaire
+
+        // Mise à jour quantité totale
+        METTRE À JOUR_QUANTITE_TOTALE(produit)
+
+        prixTotal ← ligne.prix_achat × ligne.quantite_disponible
+        montantTotal += prixTotal
+
+        AJOUTER à produits {
+            id_produit: ligne.id_produit,
+            nom_produit: ligne.nom_produit,
+            lot_numero: ligne.lot_numero,
+            quantite: ligne.quantite_disponible,
+            prix_achat: ligne.prix_achat,
+            prix_total: prixTotal,
+            date_expiration: ligne.date_expiration
+        }
+    FIN POUR
+
+    // Création du ravitaillement
+    AJOUTER à ravitaillements {
+        date_ravitaillement: DATE_ACTUELLE,
+        fichier_excel: nom_fichier,
+        donnees_excel: donnees_importation,
+        produits: produits,
+        montant_total: montantTotal
+    }
+FIN
+
+NOTES IMPORTANTES:
+-----------------
+1. Deux modes de ravitaillement : manuel et par import Excel
+2. Validation stricte des données d'entrée
+3. Mise à jour automatique des stocks et prix
+4. Traçabilité complète des mouvements (lot, date d'expiration, prix)
+5. Calcul automatique des montants totaux
+6. Gestion des dates d'expiration
+7. Support pour l'import en masse via Excel
+8. Vérification de l'existence des produits avant ravitaillement 

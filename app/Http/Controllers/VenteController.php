@@ -187,7 +187,7 @@ class VenteController extends Controller
 
                     $quantiteStock = $stock['quantite_disponible'];
                     $quantiteARetirer = min($quantiteRestante, $quantiteStock);
-                    
+
                     // Calculer le coût pour ce lot
                     $coutLot = $quantiteARetirer * floatval($stock['prix_achat']);
                     $coutTotalProduit += $coutLot;

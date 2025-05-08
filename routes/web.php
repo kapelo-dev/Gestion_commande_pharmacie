@@ -10,6 +10,7 @@ use App\Http\Controllers\PharmacienController;
 use App\Http\Controllers\RavitaillementController;
 use App\Http\Controllers\BilanController;
 use App\Http\Controllers\DestockageController;
+use App\Http\Controllers\PreparationAchatsController;
 
 // Routes publiques
 Route::get('/', function () {
@@ -89,3 +90,6 @@ Route::prefix('destockage')->name('destockage.')->group(function () {
     Route::get('/', [DestockageController::class, 'index'])->name('index');
     Route::post('/destocker', [DestockageController::class, 'destocker'])->name('destocker');
 });
+
+// Préparation des achats
+Route::get('/preparation-achats', [PreparationAchatsController::class, 'index'])->name('preparation-achats.index');

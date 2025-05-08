@@ -1,0 +1,167 @@
+ALGORITHME DE GESTION DES DESTOCKAGES
+================================
+
+1. INITIALISATION DU CONTROLLER
+------------------------------
+DÉBUT
+    ENTRÉES: credentials_firebase
+    
+    firestore ← INITIALISER FirestoreClient(credentials)
+    pharmacie_id ← RÉCUPÉRER ID depuis la session
+FIN
+
+2. NORMALISATION DES DATES (Méthode normaliserDate)
+------------------------------------------------
+DÉBUT
+    ENTRÉES: date
+
+    SI date CORRESPOND AU FORMAT "YYYY-MM-DD" ALORS
+        RETOURNER date
+    FIN SI
+
+    ESSAYER
+        date_normalisee ← CONVERTIR date EN "Y-m-d"
+        RETOURNER date_normalisee
+    ATTRAPER Exception
+        LOGGER erreur "Erreur de normalisation de la date"
+        RETOURNER null
+    FIN ESSAYER
+FIN
+
+3. AFFICHAGE DES PRODUITS À DÉSTOCKER (Méthode index)
+--------------------------------------------------
+DÉBUT
+    dateActuelle ← DATE_ACTUELLE
+    dateLimite ← dateActuelle + 3 MOIS
+    produitsExpires ← []
+    produitsAExpirer ← []
+
+    // Récupération de tous les produits
+    produitsSnapshot ← RÉCUPÉRER produits DE pharmacies/{pharmacie_id}/produits
+
+    POUR CHAQUE produit DANS produitsSnapshot FAIRE
+        stockSnapshot ← RÉCUPÉRER stocks DU produit
+
+        POUR CHAQUE lot DANS stockSnapshot FAIRE
+            SI lot.quantite_disponible ≤ 0 ALORS
+                CONTINUER
+            FIN SI
+
+            dateExpiration ← NORMALISER(lot.date_expiration)
+            SI dateExpiration EST null ALORS
+                CONTINUER
+            FIN SI
+
+            produitInfo ← {
+                id: produit.id,
+                nom: produit.nom,
+                lot_id: lot.id,
+                lot_numero: lot.lot_numero,
+                date_expiration: dateExpiration,
+                date_expiration_affichage: FORMATER(dateExpiration, "d/m/Y"),
+                quantite_disponible: lot.quantite_disponible,
+                prix_achat: lot.prix_achat
+            }
+
+            SI dateExpiration < dateActuelle ALORS
+                AJOUTER produitInfo À produitsExpires
+            SINON SI dateExpiration ≤ dateLimite ALORS
+                AJOUTER produitInfo À produitsAExpirer
+            FIN SI
+        FIN POUR
+    FIN POUR
+
+    // Tri des produits par date d'expiration
+    TRIER produitsExpires PAR date_expiration ASC
+    TRIER produitsAExpirer PAR date_expiration ASC
+
+    AFFICHER vue avec {produitsExpires, produitsAExpirer}
+FIN
+
+4. PROCESSUS DE DÉSTOCKAGE (Méthode destocker)
+-------------------------------------------
+DÉBUT
+    ENTRÉES: {
+        lots[]: tableau de "produitId|lotId",
+        raison: "expiration" OU "deterioration" OU "autre",
+        commentaire: texte optionnel
+    }
+
+    // Validation des données
+    VALIDER {
+        lots: requis, tableau,
+        raison: requis, dans ["expiration", "deterioration", "autre"],
+        commentaire: optionnel, texte
+    }
+
+    lotsDestockes ← []
+    perteTotal ← 0
+
+    POUR CHAQUE lotInfo DANS lots FAIRE
+        // Séparation des IDs
+        [produitId, lotId] ← SÉPARER lotInfo PAR "|"
+        
+        // Récupération du lot
+        lotRef ← RÉFÉRENCE lot
+        SI NON lot.existe ALORS
+            CONTINUER
+        FIN SI
+
+        // Calcul des pertes
+        quantiteDestockee ← lot.quantite_disponible
+        perteTotal += quantiteDestockee × lot.prix_achat
+
+        // Création de l'enregistrement de déstockage
+        AJOUTER à destockages {
+            date_destockage: DATE_ACTUELLE,
+            produit_id: produitId,
+            lot_id: lotId,
+            lot_numero: lot.lot_numero,
+            quantite_destockee: quantiteDestockee,
+            prix_achat: lot.prix_achat,
+            perte_financiere: quantiteDestockee × lot.prix_achat,
+            raison: raison,
+            commentaire: commentaire,
+            date_expiration: lot.date_expiration
+        }
+
+        // Mise à jour du stock
+        METTRE À JOUR lot.quantite_disponible ← 0
+
+        // Mise à jour de la quantité totale du produit
+        METTRE_À_JOUR_QUANTITE_TOTALE(produitId)
+
+        AJOUTER à lotsDestockes {
+            lot_numero: lot.lot_numero,
+            quantite: quantiteDestockee
+        }
+    FIN POUR
+
+    RETOURNER succès avec "Déstockage effectué: {nombre_lots} lots déstockés, perte totale: {perteTotal} F"
+FIN
+
+5. MISE À JOUR QUANTITÉ TOTALE (Méthode updateQuantiteTotaleProduit)
+----------------------------------------------------------------
+DÉBUT
+    ENTRÉES: produitId
+
+    quantiteTotale ← 0
+    stocksSnapshot ← RÉCUPÉRER stocks DU produit
+
+    POUR CHAQUE stock DANS stocksSnapshot FAIRE
+        quantiteTotale += stock.quantite_disponible
+    FIN POUR
+
+    METTRE À JOUR produit.quantite_en_stock ← quantiteTotale
+FIN
+
+NOTES IMPORTANTES:
+-----------------
+1. Gestion automatique des produits expirés et proche d'expiration (≤ 3 mois)
+2. Traçabilité complète des destockages (raison, commentaire, perte financière)
+3. Mise à jour automatique des stocks après déstockage
+4. Calcul des pertes financières
+5. Validation des dates d'expiration
+6. Support pour le déstockage en masse
+7. Tri des produits par date d'expiration
+8. Séparation claire entre produits expirés et produits à expirer 

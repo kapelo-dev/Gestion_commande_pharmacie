@@ -1,0 +1,183 @@
+DOCUMENTATION DES PROCESSUS DE GESTION DE LA PHARMACIE
+=================================================
+
+1. PROCESSUS DE RAVITAILLEMENT
+-----------------------------
+
+Description :
+Le ravitaillement est le processus d'approvisionnement en médicaments et produits pharmaceutiques. Il permet de maintenir un stock optimal pour répondre aux besoins des clients.
+
+Étapes du processus :
+1. Vérification des stocks actuels
+2. Identification des produits à commander
+3. Création d'un bon de commande
+4. Réception des produits
+5. Mise à jour des stocks
+
+Algorithme de ravitaillement :
+```
+DÉBUT RAVITAILLEMENT
+    POUR chaque produit DANS catalogue
+        SI quantité_disponible < seuil_minimal ALORS
+            ajouter_au_bon_commande(produit, quantité_à_commander)
+        FIN SI
+    FIN POUR
+    
+    SI bon_commande_non_vide ALORS
+        envoyer_commande_fournisseur(bon_commande)
+        ATTENDRE réception_produits
+        
+        POUR chaque produit_reçu DANS livraison
+            vérifier_conformité(produit_reçu)
+            SI conforme ALORS
+                mettre_à_jour_stock(produit_reçu)
+                enregistrer_entrée_stock(produit_reçu)
+            SINON
+                signaler_non_conformité(produit_reçu)
+            FIN SI
+        FIN POUR
+    FIN SI
+FIN RAVITAILLEMENT
+```
+
+2. PROCESSUS DE VENTE
+--------------------
+
+Description :
+La vente est le processus de distribution des médicaments aux clients sur présentation ou non d'une ordonnance selon le type de produit.
+
+Étapes du processus :
+1. Accueil du client
+2. Vérification de l'ordonnance (si nécessaire)
+3. Vérification de la disponibilité des produits
+4. Calcul du montant total
+5. Encaissement
+6. Mise à jour des stocks
+
+Algorithme de vente :
+```
+DÉBUT VENTE
+    créer_nouvelle_vente()
+    
+    RÉPÉTER
+        scanner_produit() OU rechercher_produit()
+        SI produit_trouvé ALORS
+            SI produit.nécessite_ordonnance ALORS
+                vérifier_ordonnance()
+                SI ordonnance_valide ALORS
+                    ajouter_au_panier(produit, quantité)
+                SINON
+                    afficher("Ordonnance requise")
+                FIN SI
+            SINON
+                ajouter_au_panier(produit, quantité)
+            FIN SI
+        FIN SI
+    JUSQU'À fin_saisie
+    
+    calculer_total()
+    
+    SI client_confirme_achat ALORS
+        enregistrer_paiement()
+        générer_facture()
+        POUR chaque produit DANS panier
+            mettre_à_jour_stock(produit)
+            enregistrer_sortie_stock(produit)
+        FIN POUR
+    FIN SI
+FIN VENTE
+```
+
+3. PROCESSUS DE DESTOCKAGE
+-------------------------
+
+Description :
+Le destockage est le processus de retrait des produits du stock pour diverses raisons : péremption, détérioration, rappel de lot, etc.
+
+Étapes du processus :
+1. Identification des produits à déstocker
+2. Vérification des motifs de destockage
+3. Enregistrement du destockage
+4. Mise à jour des stocks
+5. Gestion des déchets pharmaceutiques
+
+Algorithme de destockage :
+```
+DÉBUT DESTOCKAGE
+    POUR chaque produit DANS stock
+        SI produit.date_péremption <= date_actuelle OU
+           produit.est_détérioré OU
+           produit.lot_rappelé ALORS
+           
+            créer_fiche_destockage(produit)
+            retirer_du_stock(produit)
+            enregistrer_perte(produit)
+            
+            SI produit.nécessite_traitement_spécial ALORS
+                planifier_destruction_contrôlée(produit)
+            SINON
+                marquer_pour_destruction_standard(produit)
+            FIN SI
+        FIN SI
+    FIN POUR
+    
+    générer_rapport_destockage()
+FIN DESTOCKAGE
+```
+
+4. GESTION DES COMMANDES À LA VENTE
+---------------------------------
+
+Description :
+La gestion des commandes permet de traiter les demandes spéciales des clients pour des produits non disponibles immédiatement en stock.
+
+Étapes du processus :
+1. Réception de la demande client
+2. Vérification de la disponibilité chez les fournisseurs
+3. Création de la commande
+4. Suivi de la commande
+5. Réception et notification du client
+
+Algorithme de gestion des commandes :
+```
+DÉBUT GESTION_COMMANDE
+    enregistrer_demande_client(produits_demandés)
+    
+    POUR chaque produit DANS produits_demandés
+        vérifier_disponibilité_fournisseurs(produit)
+        
+        SI produit_disponible_fournisseur ALORS
+            ajouter_à_commande_fournisseur(produit)
+            calculer_délai_livraison(produit)
+        SINON
+            marquer_non_disponible(produit)
+        FIN SI
+    FIN POUR
+    
+    SI commande_possible ALORS
+        créer_commande_client()
+        enregistrer_acompte()
+        planifier_suivi_commande()
+        
+        QUAND produits_reçus FAIRE
+            vérifier_conformité()
+            notifier_client()
+            SI client_récupère_commande ALORS
+                finaliser_paiement()
+                mettre_à_jour_stock()
+                clôturer_commande()
+            FIN SI
+    SINON
+        informer_client_indisponibilité()
+    FIN SI
+FIN GESTION_COMMANDE
+```
+
+NOTES IMPORTANTES
+----------------
+- Tous les processus doivent être effectués par du personnel autorisé
+- La traçabilité doit être maintenue à chaque étape
+- Les règles de conservation des médicaments doivent être respectées
+- La confidentialité des données clients doit être assurée
+- Les normes sanitaires et réglementaires doivent être suivies
+- Une documentation précise doit être maintenue pour chaque opération 

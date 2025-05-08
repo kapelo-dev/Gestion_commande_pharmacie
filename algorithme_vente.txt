@@ -1,0 +1,195 @@
+ALGORITHME DE GESTION DES VENTES
+============================
+
+1. INITIALISATION DU CONTROLLER
+------------------------------
+DÉBUT
+    ENTRÉES: credentials_firebase
+    
+    firestore ← INITIALISER FirestoreClient(credentials)
+    pharmacie_id ← RÉCUPÉRER ID depuis la session
+    
+    SI pharmacie_id NON DÉFINI ALORS
+        LEVER Exception "ID de la pharmacie non disponible"
+    FIN SI
+FIN
+
+2. AFFICHAGE DES VENTES (Méthode index)
+--------------------------------------
+DÉBUT
+    // Récupération des informations de la pharmacie
+    pharmacie ← RÉCUPÉRER pharmacie DE pharmacies/{pharmacie_id}
+    pharmacyName ← pharmacie.nom
+    pharmacyAdresse ← pharmacie.emplacement
+    pharmacyTel ← pharmacie.telephone1 + " / " + pharmacie.telephone2
+
+    // Récupération des ventes (50 dernières)
+    ventes ← RÉCUPÉRER ventes DE pharmacies/{pharmacie_id}/ventes
+    TRIER ventes PAR date_vente DESC
+    LIMITER à 50 ventes
+
+    // Formatage des ventes
+    POUR CHAQUE vente DANS ventes FAIRE
+        produitsVendus ← FORMATER produits avec {
+            nom_produit,
+            quantite,
+            prix_unitaire,
+            prix_total,
+            sur_ordonnance
+        }
+        
+        AJOUTER à liste_ventes {
+            id: vente.id,
+            date: FORMATER(vente.date_vente),
+            montant_total: vente.montant_total,
+            produits_vendus: produitsVendus,
+            vendeur: vente.vendeur,
+            montant_percu: vente.montant_percu,
+            montant_rendu: vente.montant_rendu
+        }
+    FIN POUR
+
+    // Récupération des produits disponibles
+    produits ← RÉCUPÉRER produits DE pharmacies/{pharmacie_id}/produits
+    POUR CHAQUE produit DANS produits FAIRE
+        AJOUTER à liste_produits {
+            id: produit.id,
+            nom: produit.nom,
+            prix_unitaire: produit.prix_unitaire,
+            quantite_en_stock: produit.quantite_en_stock,
+            sur_ordonnance: produit.sur_ordonnance
+        }
+    FIN POUR
+
+    AFFICHER vue avec {ventes, produits, pharmacyName, pharmacyAdresse, pharmacyTel}
+FIN
+
+3. ENREGISTREMENT D'UNE VENTE (Méthode store)
+-------------------------------------------
+DÉBUT
+    ENTRÉES: produits[], montant_percu, montant_rendu
+    
+    // Validation des données
+    VALIDER {
+        produits: requis, tableau,
+        produits.*.id: requis, chaîne,
+        produits.*.nom: requis, chaîne,
+        produits.*.quantite: requis, entier > 0,
+        produits.*.prix_unitaire: requis, nombre ≥ 0,
+        montant_percu: requis, nombre ≥ 0,
+        montant_rendu: requis, nombre ≥ 0
+    }
+
+    montantTotal ← 0
+    coutTotal ← 0
+    produitsVendus ← []
+    alertesExpiration ← []
+
+    POUR CHAQUE produit DANS produits FAIRE
+        prixTotal ← produit.quantite × produit.prix_unitaire
+        
+        // Gestion du stock
+        stocks ← RÉCUPÉRER stocks du produit
+        quantiteDisponible ← 0
+        dateActuelle ← DATE_ACTUELLE
+        
+        // Vérification des stocks disponibles
+        POUR CHAQUE stock DANS stocks FAIRE
+            SI stock.quantite_disponible > 0 ALORS
+                // Vérification expiration (3 mois)
+                SI date_expiration - dateActuelle ≤ 90 jours ALORS
+                    AJOUTER à alertesExpiration {
+                        produit: produit.nom,
+                        date_expiration: stock.date_expiration,
+                        quantite: stock.quantite_disponible
+                    }
+                FIN SI
+                
+                quantiteDisponible += stock.quantite_disponible
+                AJOUTER stock à stocks_disponibles
+            FIN SI
+        FIN POUR
+        
+        SI quantiteDisponible < produit.quantite ALORS
+            LEVER Exception "Stock insuffisant"
+        FIN SI
+        
+        // Application FEFO (First Expired, First Out)
+        TRIER stocks_disponibles PAR date_expiration ASC
+        quantiteRestante ← produit.quantite
+        coutTotalProduit ← 0
+        detailsStockUtilise ← []
+        
+        POUR CHAQUE stock DANS stocks_disponibles FAIRE
+            SI quantiteRestante > 0 ALORS
+                quantiteARetirer ← MIN(quantiteRestante, stock.quantite_disponible)
+                coutLot ← quantiteARetirer × stock.prix_achat
+                
+                AJOUTER à detailsStockUtilise {
+                    quantite: quantiteARetirer,
+                    prix_achat: stock.prix_achat,
+                    date_expiration: stock.date_expiration,
+                    cout_total: coutLot
+                }
+                
+                METTRE À JOUR stock.quantite_disponible -= quantiteARetirer
+                quantiteRestante -= quantiteARetirer
+                coutTotalProduit += coutLot
+            FIN SI
+        FIN POUR
+        
+        // Mise à jour quantité totale du produit
+        nouvelleQuantiteTotale ← CALCULER somme des quantites_disponibles
+        METTRE À JOUR produit.quantite_en_stock ← nouvelleQuantiteTotale
+        
+        // Enregistrement des détails de la vente
+        AJOUTER à produitsVendus {
+            id_produit: produit.id,
+            nom_produit: produit.nom,
+            quantite: produit.quantite,
+            prix_unitaire: produit.prix_unitaire,
+            prix_total: prixTotal,
+            cout_total: coutTotalProduit,
+            details_stock: detailsStockUtilise
+        }
+        
+        montantTotal += prixTotal
+        coutTotal += coutTotalProduit
+    FIN POUR
+
+    // Création de la vente
+    dateVente ← DATE_ACTUELLE
+    vente ← {
+        date_vente: dateVente,
+        montant_total: montantTotal,
+        cout_total: coutTotal,
+        benefice_brut: montantTotal - coutTotal,
+        produits_vendus: produitsVendus,
+        vendeur: session.user_name,
+        montant_percu: montant_percu,
+        montant_rendu: montant_rendu,
+        created_at: dateVente,
+        updated_at: dateVente
+    }
+
+    AJOUTER vente à pharmacies/{pharmacie_id}/ventes
+    
+    RETOURNER {
+        success: vrai,
+        message: "Vente enregistrée avec succès",
+        data: {
+            vente_id: vente.id,
+            alertes_expiration: alertesExpiration
+        }
+    }
+FIN
+
+NOTES IMPORTANTES:
+-----------------
+1. Gestion FEFO (First Expired, First Out) pour optimiser la rotation des stocks
+2. Système d'alertes pour les produits proches de l'expiration (≤ 90 jours)
+3. Traçabilité complète des mouvements de stock
+4. Calcul automatique des bénéfices (montant_total - cout_total)
+5. Validation stricte des données d'entrée
+6. Gestion des erreurs (stock insuffisant, données invalides)
+7. Limitation à 50 ventes dans l'affichage pour optimiser les performances 
