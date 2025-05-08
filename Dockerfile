@@ -11,10 +11,26 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nodejs \
     npm \
+    libzip-dev \
+    zlib1g-dev \
+    autoconf \
+    pkg-config \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Installation des extensions PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Installation des extensions PHP de base
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip
+
+# Installation de l'extension gRPC
+RUN pecl install grpc && \
+    docker-php-ext-enable grpc
 
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -37,7 +53,7 @@ WORKDIR /var/www/html
 COPY composer.* ./
 COPY package*.json ./
 
-# Installation des dépendances PHP avec plus de verbosité
+# Installation des dépendances PHP avec plus de verbosité et ignore des extensions
 RUN set -x && \
     composer install \
     --no-dev \
@@ -45,6 +61,8 @@ RUN set -x && \
     --no-scripts \
     --no-autoloader \
     --prefer-dist \
+    --ignore-platform-req=ext-grpc \
+    --ignore-platform-req=ext-zip \
     --verbose
 
 # Installation des dépendances Node.js
