@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="content-wrapper">
 <style>
     .produit-autocomplete-container {
         position: relative;
@@ -30,9 +31,62 @@
     .autocomplete-item.active {
         background-color: #e0e0e0;
     }
+
+        /* Styles pour le scanner QR */
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .qr-scanner-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .qr-scanner-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+    .rejet-section {
+        display: inline-block;
+    }
+    
+    .rejet-form {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
 </style>
 
-<div class="container">
+    <!-- Scanner QR Modal -->
+    <div id="qrScannerModal" class="qr-scanner-overlay">
+        <div class="qr-scanner-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Scanner un code QR</h5>
+                <button type="button" class="close" onclick="closeQrScanner()">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div id="reader"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-12">
     @if(session('success'))
         <div id="successMessage" class="alert alert-success">
             {{ session('success') }}
@@ -46,14 +100,14 @@
     @endif
 
     <!-- Bouton pour actualiser la page -->
-    <div class="d-flex justify-content-end mb-3" style="margin-top: 10px;">
+            <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-primary" onclick="location.reload();">
             <i class="mdi mdi-refresh"></i> Actualiser
         </button>
     </div>
 
-    <div class="col-lg-12 stretch-card mb-4">
-        <div class="card">
+            <!-- Commandes en attente -->
+            <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="card-title">
@@ -67,6 +121,9 @@
                     <div class="input-group" style="width: 300px;">
                         <input type="text" id="searchPending" class="form-control" placeholder="Rechercher une commande" aria-label="Rechercher" aria-describedby="basic-addon1" style="border: 2px solid #6a11cb;">
                         <div class="input-group-append">
+                                <button class="btn" onclick="startQrScanner('searchPending')" style="background-color: #6a11cb; color: white; border: none;">
+                                    <i class="mdi mdi-qrcode-scan"></i>
+                                </button>
                             <span class="input-group-text" id="basic-addon1" style="background-color: #6a11cb; color: white;">
                                 <i class="mdi mdi-magnify"></i>
                             </span>
@@ -104,13 +161,11 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- Commandes validées -->
-    <div class="col-lg-12 stretch-card">
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -125,6 +180,9 @@
                     <div class="input-group" style="width: 300px;">
                         <input type="text" id="searchValidated" class="form-control" placeholder="Rechercher une commande" aria-label="Rechercher" aria-describedby="basic-addon1" style="border: 2px solid #6a11cb;">
                         <div class="input-group-append">
+                                <button class="btn" onclick="startQrScanner('searchValidated')" style="background-color: #6a11cb; color: white; border: none;">
+                                    <i class="mdi mdi-qrcode-scan"></i>
+                                </button>
                             <span class="input-group-text" id="basic-addon1" style="background-color: #6a11cb; color: white;">
                                 <i class="mdi mdi-magnify"></i>
                             </span>
@@ -162,6 +220,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,9 +268,19 @@
                         </div>
 
                         <!-- Statut de la commande -->
-                        <div class="alert alert-{{ $commande['status_commande'] == 'validée' ? 'success' : 'warning' }} mb-4">
+                        <div class="alert alert-{{ $commande['status_commande'] == 'validée' ? 'success' : ($commande['status_commande'] == 'rejetée' ? 'danger' : 'warning') }} mb-4">
                             <i class="mdi mdi-information-outline"></i>
                             Status actuel : <strong>{{ $commande['status_commande'] }}</strong>
+                            @if($commande['status_commande'] == 'rejetée' && isset($commande['raison_rejet']))
+                                <hr>
+                                <p class="mb-0">
+                                    <strong>Raison du rejet :</strong><br>
+                                    {{ $commande['raison_rejet'] }}
+                                </p>
+                                <small class="text-muted">
+                                    Rejetée le {{ \Carbon\Carbon::parse($commande['date_rejet'])->format('d/m/Y à H:i') }}
+                                </small>
+                            @endif
                         </div>
 
                         <!-- Liste des produits -->
@@ -287,12 +356,31 @@
                                     <i class="mdi mdi-check"></i> Valider
                                 </button>
                             </form>
-                            <form action="{{ route('commandes.updateStatus', ['commandeId' => $commande['id'], 'status' => 'rejetée']) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-danger">
+
+                            <!-- Section de rejet -->
+                            <div class="rejet-section">
+                                <button type="button" class="btn btn-danger show-rejet-form">
                                     <i class="mdi mdi-close"></i> Rejeter
                                 </button>
-                            </form>
+
+                                <div class="rejet-form" style="display: none;">
+                                    <form action="{{ route('commandes.updateStatus', ['commandeId' => $commande['id'], 'status' => 'rejetée']) }}" method="POST">
+                                        @csrf
+                                        <div class="form-group mt-3">
+                                            <label for="raison_rejet">Raison du rejet <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="raison_rejet" rows="3" required></textarea>
+                                        </div>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-secondary cancel-rejet">
+                                                <i class="mdi mdi-close"></i> Annuler
+                                            </button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="mdi mdi-check"></i> Confirmer le rejet
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         @endif
                         @if($commande['status_commande'] == 'validée')
                             <form action="{{ route('commandes.updateStatus', ['commandeId' => $commande['id'], 'status' => 'récupérée']) }}" method="POST" class="d-inline">
@@ -314,6 +402,8 @@
         </div>
     @endforeach
 </div>
+</div>
+@endsection
 
 @push('styles')
 <style>
@@ -364,7 +454,33 @@
 </style>
 @endpush
 
+@push('scripts')
+<!-- HTML5 QR Code Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
+    // Fonction de filtrage des commandes
+    function filterTable(inputValue, tableId) {
+        const value = inputValue.toLowerCase();
+        let foundRow = null;
+        
+        $(`#${tableId} tbody tr`).each(function() {
+            const row = $(this);
+            const text = row.text().toLowerCase();
+            const isVisible = text.indexOf(value) > -1;
+            row.toggle(isVisible);
+            
+            // Si c'est une ligne correspondante, on la sauvegarde
+            if (isVisible) {
+                foundRow = row;
+            }
+        });
+        
+        // Si on a trouvé une ligne et que c'est après un scan
+        return foundRow;
+    }
+
+    // Script pour le calcul des montants
     function calculerMontantRendu(commandeId) {
         const montantTotal = parseFloat($('#montant-total-' + commandeId).val().replace(',', '')) || 0;
         const montantPercu = parseFloat($('#montant-percu-' + commandeId).val()) || 0;
@@ -392,40 +508,127 @@
         }
     }
 
-    $(document).on('input', '.montant-percu', function() {
-        const commandeId = $(this).data('commande-id');
-        calculerMontantRendu(commandeId);
+    $(document).ready(function() {
+        // Gestion du formulaire de rejet
+        $(document).on('click', '.show-rejet-form', function() {
+            console.log('Bouton rejeter cliqué');
+            const rejetSection = $(this).closest('.rejet-section');
+            $(this).hide();
+            rejetSection.find('.rejet-form').show();
+        });
+
+        $(document).on('click', '.cancel-rejet', function() {
+            console.log('Bouton annuler cliqué');
+            const rejetSection = $(this).closest('.rejet-section');
+            rejetSection.find('.rejet-form').hide();
+            rejetSection.find('.show-rejet-form').show();
+            rejetSection.find('form')[0].reset();
+        });
+
+        // Validation du formulaire de rejet
+        $(document).on('submit', 'form', function(e) {
+            const raisonRejet = $(this).find('textarea[name="raison_rejet"]');
+            if (raisonRejet.length > 0 && !raisonRejet.val().trim()) {
+                e.preventDefault();
+                alert('Veuillez saisir une raison pour le rejet.');
+                return false;
+            }
+        });
+
+        // Filtrage des commandes en attente
+        $('#searchPending').on('input', function() {
+            filterTable($(this).val(), 'pendingOrdersTable');
+        });
+
+        // Filtrage des commandes validées
+        $('#searchValidated').on('input', function() {
+            filterTable($(this).val(), 'validatedOrdersTable');
+        });
+
+        // Gestion des montants perçus
+        $(document).on('input', '.montant-percu', function() {
+            const commandeId = $(this).data('commande-id');
+            calculerMontantRendu(commandeId);
+        });
+
+        // Masquer les messages
+        masquerMessages('#successMessage');
+        masquerMessages('#errorMessage');
     });
 
-    // Masquer les messages de succès et d'erreur après 3 secondes
-    function masquerMessages(selector, delay = 3000) {
-        const messages = document.querySelectorAll(selector);
-        messages.forEach(function(message) {
-            setTimeout(function() {
-                message.style.display = 'none';
-            }, delay);
+    // Code Scanner QR
+    let html5QrCode = null;
+    let currentSearchInput = null;
+
+    function startQrScanner(inputId) {
+        if (html5QrCode === null) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+        
+        currentSearchInput = document.getElementById(inputId);
+        document.getElementById('qrScannerModal').style.display = 'block';
+        
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+        };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanError
+        ).catch((err) => {
+            console.error("Erreur lors du démarrage du scanner:", err);
+            alert("Erreur lors du démarrage du scanner. Veuillez vérifier que vous avez autorisé l'accès à la caméra.");
         });
     }
 
-    // Filtrage des commandes en attente
-    $('#searchPending').on('keyup', function() {
-        const value = $(this).val().toLowerCase();
-        $('#pendingOrdersTable tbody tr').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
-    });
+    function closeQrScanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('qrScannerModal').style.display = 'none';
+            }).catch((err) => {
+                console.error(err);
+            });
+        } else {
+            document.getElementById('qrScannerModal').style.display = 'none';
+        }
+    }
 
-    // Filtrage des commandes validées
-    $('#searchValidated').on('keyup', function() {
-        const value = $(this).val().toLowerCase();
-        $('#validatedOrdersTable tbody tr').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
-    });
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log("Code scanné avec succès:", decodedText);
+        if (currentSearchInput) {
+            // Mettre à jour la valeur de l'input
+            currentSearchInput.value = decodedText;
+            
+            // Déclencher le filtrage en fonction de l'ID de l'input
+            const tableId = currentSearchInput.id === 'searchPending' ? 'pendingOrdersTable' : 'validatedOrdersTable';
+            const foundRow = filterTable(decodedText, tableId);
+            
+            // Si une ligne est trouvée, ouvrir son modal
+            if (foundRow) {
+                // Trouver le bouton "Détails" dans la ligne et le cliquer
+                const detailsButton = foundRow.find('button[data-toggle="modal"]');
+                if (detailsButton.length > 0) {
+                    detailsButton.click();
+                }
+            }
+            
+            // Fermer le scanner
+            closeQrScanner();
+        }
+    }
 
-    // Masquer les messages de succès et d'erreur après 3 secondes
-    masquerMessages('#successMessage');
-    masquerMessages('#errorMessage');
+    function onScanError(error) {
+        console.warn("Erreur de scan:", error);
+    }
+
+    // Nettoyage lors de la fermeture de la page
+    window.addEventListener('beforeunload', () => {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(console.error);
+        }
+    });
 </script>
-
-@endsection
+@endpush

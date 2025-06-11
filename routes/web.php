@@ -42,10 +42,6 @@ Route::prefix('produits')->name('produits.')->group(function () {
     Route::post('/{id}/update', [ProduitController::class, 'update'])->name('update');
     Route::delete('/{id}', [ProduitController::class, 'destroy'])->name('destroy');
     Route::post('/update-stock', [ProduitController::class, 'updateStock'])->name('updateStock');
-    
-    // Routes pour la gestion des produits dans le ravitaillement
-    Route::post('/add', [RavitaillementController::class, 'addProduit'])->name('add');
-    Route::get('/list', [RavitaillementController::class, 'getProduits'])->name('list');
 });
 
 // Commandes
@@ -66,13 +62,10 @@ Route::prefix('pharmaciens')->name('pharmaciens.')->group(function () {
 
 // Ravitaillements
 Route::prefix('ravitaillements')->name('ravitaillements.')->group(function () {
-    // Routes d'importation
     Route::get('/template/download', [RavitaillementController::class, 'downloadTemplate'])->name('template.download');
     Route::post('/import/preview', [RavitaillementController::class, 'previewImport'])->name('import.preview');
     Route::post('/import/process', [RavitaillementController::class, 'processImport'])->name('import.process');
     Route::get('/import', [RavitaillementController::class, 'showImport'])->name('import');
-    
-    // Routes principales
     Route::get('/', [RavitaillementController::class, 'index'])->name('index');
     Route::post('/store', [RavitaillementController::class, 'store'])->name('store');
     Route::get('/{id}/preview', [RavitaillementController::class, 'preview'])->name('preview');

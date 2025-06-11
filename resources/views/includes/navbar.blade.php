@@ -10,11 +10,13 @@
     </button>
 
     <ul class="navbar-nav navbar-nav-right">
+      @if(session('pharmacien_role') === 'gérant')
       <li class="nav-item" style="margin-right: auto;">
         <button type="button" class="btn btn-warning btn-sm" style="margin-left: -15px;" data-toggle="modal" data-target="#updateStockModal">
           <i class="fas fa-sync-alt"></i> Mise à jour des stocks
         </button>
       </li>
+      @endif
       <li class="nav-item d-flex align-items-center">
         <span style="color: #6a11cb; font-weight: 600; font-size: 0.95rem; background-color: #ffffff; padding: 5px 10px; border-radius: 4px; margin-right: 10px;">
           {{ session('pharmacien_prenom')}}

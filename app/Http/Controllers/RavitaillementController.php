@@ -31,8 +31,21 @@ class RavitaillementController extends Controller
         }
     }
 
+    protected function checkGerantRole()
+    {
+        if (session('pharmacien_role') !== 'gérant') {
+            return redirect()->route('dashboard')
+                ->with('error', 'Accès non autorisé. Seuls les gérants peuvent accéder à cette section.');
+        }
+        return null;
+    }
+
     public function index()
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $pharmacieId = session('pharmacie_id');
     
         if (empty($pharmacieId)) {
@@ -91,6 +104,10 @@ class RavitaillementController extends Controller
 
     public function store(Request $request)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $request->validate([
             'fournisseur' => 'required|string',
             'lot_numero' => 'required|string',
@@ -198,6 +215,10 @@ class RavitaillementController extends Controller
     
     public function destroy($id)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $pharmacieId = session('pharmacie_id');
 
         if (!$pharmacieId) {
@@ -229,6 +250,10 @@ class RavitaillementController extends Controller
 
     public function preview($id)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         try {
             $pharmacieId = session('pharmacie_id');
             
@@ -285,6 +310,10 @@ class RavitaillementController extends Controller
 
     public function previewImport(Request $request)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         try {
             Log::info('Début de previewImport');
             Log::info('Files reçus:', $request->allFiles());
@@ -428,6 +457,10 @@ class RavitaillementController extends Controller
 
     public function processImport(Request $request)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         try {
             $importData = session('import_data');
             $filePath = session('temp_file_path');
@@ -538,11 +571,19 @@ class RavitaillementController extends Controller
 
     public function showImport()
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         return view('ravitaillements.import');
     }
 
     public function downloadTemplate()
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         try {
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();

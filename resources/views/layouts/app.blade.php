@@ -242,7 +242,9 @@
     @include('includes.sidebar')
   <!-- partial -->
 <div class="main-panel">
+    <div class="content-wrapper">
     @yield('content')
+    </div>
 </div>
 <!-- main-panel ends -->
       

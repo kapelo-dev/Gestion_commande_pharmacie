@@ -108,9 +108,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="card-title">Liste des Produits</h4>
+                    @if(session('pharmacien_role') === 'gérant')
                     <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addProduitModal">
                         <i class="fas fa-plus"></i> Nouveau Produit
                     </button>
+                    @endif
                 </div>
 
                 <!-- Zone de recherche pour les produits -->
@@ -136,7 +138,9 @@
                                 <th>Quantité en stock</th>
                                 <th>Sur ordonnance</th>
                                 <th>Prix Unitaire</th>
+                                @if(session('pharmacien_role') === 'gérant')
                                 <th>Actions</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody id="produitsTableBody">
@@ -148,6 +152,7 @@
                                     <td class="text-center">{{ $produit['quantite_en_stock'] }}</td>
                                     <td class="text-center">{{ $produit['sur_ordonnance'] ? 'Oui' : 'Non' }}</td>
                                     <td class="text-end">{{ number_format($produit['prix_unitaire'], 0, ',', ' ') }} FCFA</td>
+                                    @if(session('pharmacien_role') === 'gérant')
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editProduitModal{{ $produit['id'] }}">
@@ -162,6 +167,7 @@
                                             @method('DELETE')
                                         </form>
                                     </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>

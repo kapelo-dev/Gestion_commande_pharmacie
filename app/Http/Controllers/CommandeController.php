@@ -76,10 +76,22 @@ class CommandeController extends Controller
         $commandeSnapshot = $commandeRef->snapshot();
         $commandeData = $commandeSnapshot->data();
 
-        // Mettre à jour le champ 'status_commande' de la commande
-        $commandeRef->update([
-            ['path' => 'status_commande', 'value' => $status],
-        ]);
+        // Préparer les champs à mettre à jour
+        $updateFields = [
+            ['path' => 'status_commande', 'value' => $status]
+        ];
+
+        // Si le statut est "rejetée", ajouter la raison du rejet
+        if ($status === 'rejetée') {
+            if (!$request->has('raison_rejet')) {
+                return redirect()->back()->withErrors('La raison du rejet est requise.');
+            }
+            $updateFields[] = ['path' => 'raison_rejet', 'value' => $request->raison_rejet];
+            $updateFields[] = ['path' => 'date_rejet', 'value' => date('Y-m-d H:i:s')];
+        }
+
+        // Mettre à jour la commande
+        $commandeRef->update($updateFields);
 
         // Si le statut est mis à jour à "récupérée", créer un document de vente
         if ($status === 'récupérée') {
@@ -88,8 +100,11 @@ class CommandeController extends Controller
             return redirect()->route('ventes.index')->with('success', 'Commande mise à jour avec succès.');
         }
 
+        // Message de succès personnalisé selon le statut
+        $message = $status === 'rejetée' ? 'Commande rejetée avec succès.' : 'Commande mise à jour avec succès.';
+
         // Rediriger vers la page des commandes après la mise à jour
-        return redirect()->route('commandes.index')->with('success', 'Commande mise à jour avec succès.');
+        return redirect()->route('commandes.index')->with('success', $message);
     }
 
     protected function createVenteFromCommande($commandeData, $montantPercu, $montantRendu)

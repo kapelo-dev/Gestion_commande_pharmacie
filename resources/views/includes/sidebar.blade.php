@@ -26,6 +26,7 @@
         </li>
         
     
+        @if(session('pharmacien_role') === 'gérant')
         <li class="nav-item" >
         <a class="nav-link" href="{{ route('pharmaciens.index') }}">
                 <i class="mdi mdi-file-chart" style="margin-right: 10px;"></i>
@@ -57,6 +58,7 @@
                 <span class="menu-title">Préparation Achats</span>
             </a>
         </li>
+        @endif
 
       
     </ul>

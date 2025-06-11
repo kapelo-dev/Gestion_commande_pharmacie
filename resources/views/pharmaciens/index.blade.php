@@ -61,12 +61,12 @@
                             </td>
                         </tr>
 
-                        <!-- Modal pour l'édition du pharmacien -->
+                        <!-- Modal d'édition -->
                         <div class="modal fade" id="editPharmacienModal{{ $pharmacien['id'] }}" tabindex="-1" role="dialog">
                             <div class="modal-dialog modal-lg" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Éditer Pharmacien</h5>
+                                        <h5 class="modal-title">Modifier le Pharmacien</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
@@ -109,12 +109,12 @@
                                                 <label class="d-block mb-2">Rôle</label>
                                                 <div class="radio-container">
                                                     <div class="custom-radio">
-                                                        <input type="radio" id="role_superviseur" name="role" value="superviseur" {{ $pharmacien['role'] == 'superviseur' ? 'checked' : '' }} required>
-                                                        <label for="role_superviseur">Superviseur</label>
+                                                        <input type="radio" id="role_gerant_{{ $pharmacien['id'] }}" name="role" value="gérant" {{ $pharmacien['role'] == 'gérant' ? 'checked' : '' }} required>
+                                                        <label for="role_gerant_{{ $pharmacien['id'] }}">Gérant</label>
                                                     </div>
                                                     <div class="custom-radio">
-                                                        <input type="radio" id="role_caissier" name="role" value="caissier" {{ $pharmacien['role'] == 'caissier' ? 'checked' : '' }} required>
-                                                        <label for="role_caissier">Caissier</label>
+                                                        <input type="radio" id="role_caissier_{{ $pharmacien['id'] }}" name="role" value="caissier" {{ $pharmacien['role'] == 'caissier' ? 'checked' : '' }} required>
+                                                        <label for="role_caissier_{{ $pharmacien['id'] }}">Caissier</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -182,22 +182,22 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="mot_de_passe">Mot de passe</label>
+                            <input type="password" class="form-control form-control-sm" id="mot_de_passe" name="mot_de_passe" required>
+                        </div>
+
+                        <div class="form-group">
                             <label class="d-block mb-2">Rôle</label>
                             <div class="radio-container">
                                 <div class="custom-radio">
-                                    <input type="radio" id="new_role_superviseur" name="role" value="superviseur" required>
-                                    <label for="new_role_superviseur">Superviseur</label>
+                                    <input type="radio" id="new_role_gerant" name="role" value="gérant" required>
+                                    <label for="new_role_gerant">Gérant</label>
                                 </div>
                                 <div class="custom-radio">
                                     <input type="radio" id="new_role_caissier" name="role" value="caissier" required>
                                     <label for="new_role_caissier">Caissier</label>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="mot_de_passe">Mot de passe</label>
-                            <input type="password" class="form-control form-control-sm" id="mot_de_passe" name="mot_de_passe" required>
                         </div>
 
                         <div class="modal-footer px-0 pb-0">
@@ -209,40 +209,24 @@
             </div>
         </div>
     </div>
-</div>
 
-@push('scripts')
-<script>
-function confirmDelete(pharmacienId) {
-    Swal.fire({
-        title: 'Êtes-vous sûr ?',
-        text: "Cette action est irréversible !",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const form = document.getElementById('delete-form-' + pharmacienId);
-            form.submit();
+    <script>
+        function confirmDelete(pharmacienId) {
+            Swal.fire({
+                title: 'Êtes-vous sûr ?',
+                text: "Cette action est irréversible !",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Oui, supprimer',
+                cancelButtonText: 'Annuler'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + pharmacienId).submit();
+                }
+            });
         }
-    });
-}
-
-// Animation des messages de succès
-const successMessage = document.querySelector('.alert-success');
-if (successMessage) {
-    setTimeout(() => {
-        successMessage.style.transition = 'opacity 0.5s ease';
-        successMessage.style.opacity = '0';
-        setTimeout(() => {
-            successMessage.remove();
-        }, 500);
-    }, 3000);
-}
-</script>
-@endpush
-
+    </script>
+</div>
 @endsection

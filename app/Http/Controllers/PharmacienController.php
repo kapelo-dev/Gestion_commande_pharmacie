@@ -14,8 +14,21 @@ class PharmacienController extends Controller
         $this->firebaseService = $firebaseService;
     }
 
+    protected function checkGerantRole()
+    {
+        if (session('pharmacien_role') !== 'gérant') {
+            return redirect()->route('dashboard')
+                ->with('error', 'Accès non autorisé. Seuls les gérants peuvent accéder à cette section.');
+        }
+        return null;
+    }
+
     public function index()
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $pharmacieId = session('pharmacie_id');
 
         if (!$pharmacieId) {
@@ -42,11 +55,18 @@ class PharmacienController extends Controller
 
     public function create()
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
         return view('pharmaciens.create');
     }
 
     public function store(Request $request)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $request->validate([
             'nom' => 'required|string',
             'prenom' => 'required|string',
@@ -84,12 +104,15 @@ class PharmacienController extends Controller
 
     public function update(Request $request, $pharmacienId)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $request->validate([
             'nom' => 'required|string',
             'prenom' => 'required|string',
             'identifiant' => 'required|string',
             'telephone' => 'required|string',
-           /*  'mot_de_passe' => 'required|string|min:8', */
             'role' => 'required|string',
         ]);
 
@@ -105,22 +128,26 @@ class PharmacienController extends Controller
             return redirect()->back()->withErrors('Identifiant déjà utilisé.');
         }
 
-        $data = [
-            'nom' => $request->nom,
-            'prenom' => $request->prenom,
-            'identifiant' => $request->identifiant,
-            'telephone' => $request->telephone,
-          /*   'mot_de_passe' => Hash::make($request->mot_de_passe), */
-            'role' => $request->role,
+        // Formater les données pour la mise à jour Firestore
+        $updates = [
+            ['path' => 'nom', 'value' => $request->nom],
+            ['path' => 'prenom', 'value' => $request->prenom],
+            ['path' => 'identifiant', 'value' => $request->identifiant],
+            ['path' => 'telephone', 'value' => $request->telephone],
+            ['path' => 'role', 'value' => $request->role],
         ];
 
-        $this->firebaseService->updateDocument('pharmacies', $pharmacieId, 'pharmaciens', $pharmacienId, $data);
+        $this->firebaseService->updateDocument('pharmacies', $pharmacieId, 'pharmaciens', $pharmacienId, $updates);
 
         return redirect()->route('pharmaciens.index')->with('success', 'Pharmacien mis à jour avec succès.');
     }
 
     public function edit($pharmacienId)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $pharmacieId = session('pharmacie_id');
 
         if (!$pharmacieId) {
@@ -140,6 +167,10 @@ class PharmacienController extends Controller
 
     public function destroy($pharmacienId)
     {
+        if ($response = $this->checkGerantRole()) {
+            return $response;
+        }
+
         $pharmacieId = session('pharmacie_id');
 
         if (!$pharmacieId) {
