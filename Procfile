@@ -1,1 +1,1 @@
-web: vendor/bin/heroku-php-apache2 public/ 
+web: cp apache2.conf /etc/apache2/conf-available/custom.conf && a2enconf custom && apache2-foreground 

@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: pharma-app
+    env: php
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+      npm ci
+      npm run build
+    startCommand: apache2-foreground
+    envVars:
+      - key: APP_NAME
+        value: Pharma
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        fromService:
+          type: web
+          name: pharma-app
+          property: host
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: COMPOSER_MEMORY_LIMIT
+        value: "512M"
+      - key: PHP_MEMORY_LIMIT
+        value: "512M"
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - app/**/*.php
+        - bootstrap/**/*.php
+        - config/**/*.php
+        - public/**/*
+        - resources/**/*.php
+        - routes/**/*.php
+      ignoredPaths:
+        - storage/**
+        - tests/**
