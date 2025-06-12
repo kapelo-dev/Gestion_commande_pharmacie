@@ -87,4 +87,8 @@ RUN chown -R www-data:www-data \
 EXPOSE 80
 
 # Commande de démarrage
-CMD ["apache2-foreground"] 
+CMD ["apache2-foreground"]
+
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache 
