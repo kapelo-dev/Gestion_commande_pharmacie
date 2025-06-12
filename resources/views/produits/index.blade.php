@@ -132,7 +132,7 @@
                     <table class="table table-bordered table-striped">
                         <thead class="thead-dark">
                             <tr class="text-center">
-                                <th>#</th>
+                                
                                 <th>Nom</th>
                                 <th>Description</th>
                                 <th>Quantité en stock</th>
@@ -146,7 +146,7 @@
                         <tbody id="produitsTableBody">
                             @forelse ($produits as $index => $produit)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
+                                    
                                     <td>{{ $produit['nom'] }}</td>
                                     <td class="description-cell">{{ $produit['description'] }}</td>
                                     <td class="text-center">{{ $produit['quantite_en_stock'] }}</td>

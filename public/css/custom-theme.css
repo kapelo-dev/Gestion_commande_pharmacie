@@ -1,0 +1,176 @@
+/* Thème personnalisé avec le nouveau violet */
+:root {
+    --primary-gradient: linear-gradient(135deg, #8b5cf6, #d946ef);
+    --primary-color: #8b5cf6;
+    --primary-hover: #7c4fe7;
+    --secondary-color: #d946ef;
+}
+
+/* Navigation */
+.navbar,
+.sidebar .nav .nav-item.active > .nav-link {
+    background: var(--primary-gradient) !important;
+}
+
+/* Sidebar */
+.sidebar {
+    background: #fff;
+    border-right: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.sidebar .nav .nav-item .nav-link {
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav .nav-item.active .nav-link {
+    color: white;
+}
+
+.sidebar .nav .nav-item .nav-link:hover {
+    color: var(--primary-color);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.sidebar .nav .nav-item.active {
+    background: var(--primary-gradient);
+}
+
+/* Dashboard Cards */
+.card {
+    border: none;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card .card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Montant Total Card */
+.card-montant-total {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.card-montant-total .card-title,
+.card-montant-total .montant {
+    color: white;
+}
+
+/* Boutons */
+.btn-primary,
+.btn-gradient-primary,
+.btn-info {
+    background: var(--primary-gradient) !important;
+    border: none !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover,
+.btn-gradient-primary:hover,
+.btn-info:hover {
+    background: var(--primary-hover) !important;
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Liens et éléments interactifs */
+a {
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: none;
+}
+
+/* Formulaires */
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+}
+
+/* Tables */
+.table .thead-primary th {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+}
+
+/* Badges et indicateurs */
+.badge-primary {
+    background: var(--primary-gradient) !important;
+}
+
+/* Progress bars */
+.progress-bar {
+    background: var(--primary-gradient);
+}
+
+/* Pagination */
+.page-item.active .page-link {
+    background: var(--primary-gradient);
+    border-color: var(--primary-color);
+}
+
+/* Switches et checkboxes */
+.form-check-input:checked {
+    background: var(--primary-gradient) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.stats-card .number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stats-card .label {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Menu déroulant */
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--primary-color);
+}
+
+/* Notifications */
+.notification-badge {
+    background: var(--primary-gradient);
+}
+
+/* Mise à jour des stocks button */
+.btn-update-stocks {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 50px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-update-stocks:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4) !important;
+}

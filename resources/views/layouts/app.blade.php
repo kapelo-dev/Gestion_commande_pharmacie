@@ -31,6 +31,8 @@
   <link rel="stylesheet" href="/css/vertical-layout-light/style.css">
   <link rel="stylesheet" href="/vendors/mdi/css/materialdesignicons.min.css">
   <!-- endinject -->
+  <!-- Custom theme -->
+  <link rel="stylesheet" href="/css/custom-theme.css">
   <link rel="shortcut icon" href="/images/image.png" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <!-- Bootstrap 5 JS Bundle -->

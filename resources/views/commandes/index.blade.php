@@ -231,8 +231,8 @@
         <div class="modal fade" id="detailsCommandeModal{{ $commande['id'] }}" tabindex="-1">
             <div class="modal-dialog modal-dialog-scrollable modal-lg mt-0">
                 <div class="modal-content">
-                    <div class="modal-header bg-info text-white">
-                        <h5 class="modal-title">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #8B5CF6, #D946EF);">
+                        <h5 class="modal-title text-white">
                             <i class="mdi mdi-clipboard-text"></i>
                             Détails de la commande #{{ $commande['code_commande'] }}
                         </h5>
