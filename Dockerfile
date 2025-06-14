@@ -1,6 +1,17 @@
 # Étape 1 : Image de base avec PHP 8.2
 FROM php:8.2-cli
 
+# Installer les extensions PHP nécessaires
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libgrpc-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd grpc \
+    && docker-php-ext-enable gd grpc
+
+
 # Installer les dépendances système pour PHP + Node.js
 RUN apt-get update && apt-get install -y \
     git unzip curl zip libzip-dev libpng-dev libonig-dev libxml2-dev libpq-dev \
