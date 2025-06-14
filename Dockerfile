@@ -1,94 +1,38 @@
-FROM php:8.2-apache
+# Étape 1 : Image de base avec PHP 8.2
+FROM php:8.2-cli
 
-# Installation des dépendances système
+# Installer les dépendances système pour PHP + Node.js
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    nodejs \
-    npm \
-    libzip-dev \
-    zlib1g-dev \
-    autoconf \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    git unzip curl zip libzip-dev libpng-dev libonig-dev libxml2-dev libpq-dev \
+    nodejs npm gnupg ca-certificates lsb-release
 
-# Installation des extensions PHP de base
-RUN docker-php-ext-install \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip
+# Activer les extensions PHP nécessaires
+RUN docker-php-ext-install pdo pdo_pgsql zip mbstring
 
-# Installation de l'extension gRPC
-RUN pecl install grpc && \
-    docker-php-ext-enable grpc
+# Installer Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Installation de Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Installer Node.js 18+ (si version trop ancienne dans les dépôts)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
 
-# Configuration de Composer
-ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV COMPOSER_HOME=/composer
-ENV PATH="${COMPOSER_HOME}/vendor/bin:${PATH}"
+# Définir le dossier de travail
+WORKDIR /var/www
 
-# Configuration d'Apache
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN a2enmod rewrite
-
-# Création du répertoire de travail
-WORKDIR /var/www/html
-
-# Copie des fichiers de dépendances
-COPY composer.* ./
-COPY package*.json ./
-
-# Installation des dépendances PHP avec plus de verbosité et ignore des extensions
-RUN set -x && \
-    composer install \
-    --no-dev \
-    --no-interaction \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist \
-    --ignore-platform-req=ext-grpc \
-    --ignore-platform-req=ext-zip \
-    --verbose
-
-# Installation des dépendances Node.js
-RUN npm install
-
-# Copie du reste des fichiers du projet
+# Copier tous les fichiers du projet Laravel
 COPY . .
 
-# Génération de l'autoloader optimisé
-RUN composer dump-autoload --optimize --no-dev
+# Installer les dépendances Laravel
+RUN composer install --no-dev --optimize-autoloader
 
-# Build des assets
-RUN npm run build
+# Installer les dépendances frontend et compiler
+RUN npm install && npm run build
 
-# Configuration des permissions
-RUN chown -R www-data:www-data \
-    /var/www/html/storage \
-    /var/www/html/bootstrap/cache \
-    /var/www/html/public
+# Donner les bons droits d'accès
+RUN chmod -R 775 storage bootstrap/cache
 
-# Exposition du port
-EXPOSE 80
+# Exposer le port requis par Render
+EXPOSE 10000
 
-# Commande de démarrage
-CMD ["apache2-foreground"]
-
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache 
+# Démarrer Laravel avec le serveur PHP intégré
+CMD php artisan serve --host=0.0.0.0 --port=10000
